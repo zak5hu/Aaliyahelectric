@@ -537,28 +537,48 @@ body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: defau
   </div>
 </div>
 
-<!-- WORKER & SITE MODALS (Existing) -->
 <div class="modal" id="worker-modal">
   <div class="modal-card" style="max-width: 500px;">
     <h3 style="margin-bottom:24px;" id="worker-modal-title">Worker</h3>
     <form id="worker-form">
       <div class="form-group"><label>Name</label><input class="input" id="worker-name" required></div>
-      <div class="form-group"><label>Category</label><select class="select" id="worker-category"><option>Electrician</option><option>Helper</option><option>Plumber</option><option>Mason</option></select></div>
+      <div class="form-group">
+        <label>Category</label>
+        <select class="select" id="worker-category">
+          <option>Electrician</option><option>Helper</option><option>Plumber</option><option>Mason</option>
+        </select>
+      </div>
       <div class="form-group"><label>Phone</label><input class="input" id="worker-phone"></div>
       <div class="form-group"><label>Daily Rate (₹)</label><input type="number" class="input" id="worker-rate" required></div>
-      <div style="display:flex; gap:12px; justify-content:flex-end;"><button type="button" class="btn btn-ghost" onclick="closeModal('worker-modal')">Cancel</button><button type="submit" class="btn btn-primary">Save Worker</button></div>
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('worker-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Worker</button>
+      </div>
     </form>
   </div>
 </div>
+
 <div class="modal" id="site-modal">
   <div class="modal-card" style="max-width: 500px;">
     <h3 style="margin-bottom:24px;" id="site-modal-title">Site</h3>
     <form id="site-form">
       <div class="form-group"><label>Site Name</label><input class="input" id="site-name" required></div>
       <div class="form-group"><label>Location</label><input class="input" id="site-location" required></div>
-      <div class="form-group"><label>Payment Cycle</label><select class="select" id="site-cycle"><option value="sat-fri">Sat - Fri</option><option value="mon-sat">Mon - Sat</option></select></div>
-      <div class="form-group"><label>Status</label><select class="select" id="site-status"><option>Active</option><option>Completed</option></select></div>
-      <div style="display:flex; gap:12px; justify-content:flex-end;"><button type="button" class="btn btn-ghost" onclick="closeModal('site-modal')">Cancel</button><button type="submit" class="btn btn-primary">Save Site</button></div>
+      <div class="form-group">
+        <label>Payment Cycle</label>
+        <select class="select" id="site-cycle">
+          <option value="sat-fri">Sat - Fri (Settles on Friday)</option>
+          <option value="mon-sat">Mon - Sat (Settles on Saturday)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select class="select" id="site-status"><option>Active</option><option>Completed</option></select>
+      </div>
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('site-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Site</button>
+      </div>
     </form>
   </div>
 </div>
@@ -631,7 +651,34 @@ function saveData(){ if(!isLoaded) return; const statusDiv = document.getElement
 function downloadCSV(filename, csv) { const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", filename); document.body.appendChild(link); link.click(); document.body.removeChild(link); }
 window.exportAttendance = () => { let csv = "Date,Worker,Site,Wages,Mode,Status\n"; attendance.forEach(a => { const w = workers.find(x => x.id == a.workerId)?.name || 'Deleted'; const s = sites.find(x => x.id == a.siteId)?.name || 'Deleted'; csv += `${a.date},${w},${s},${a.wages},${a.mode || 'Cash'},${a.payment}\n`; }); downloadCSV(`Attendance.csv`, csv); closeModal('export-modal'); };
 window.exportSitePayments = () => { let csv = "Date,Site,Amount,Mode,Notes\n"; sitePayments.forEach(p => { const s = sites.find(x => x.id == p.siteId)?.name || 'Deleted'; csv += `${p.date},${s},${p.amount},${p.mode || 'Cash'},${p.notes || '-'}\n`; }); downloadCSV(`SitePayments.csv`, csv); closeModal('export-modal'); };
-window.exportWeeklyPayouts = () => { const cutoff = document.getElementById('settlement-date').value; const pending = attendance.filter(a => a.payment === 'pending' && (!cutoff || a.date <= cutoff)); let csv = "Worker Name,Amount Due\n"; const totals = {}; pending.forEach(a => { totals[a.workerId] = (totals[a.workerId] || 0) + a.wages; }); Object.keys(totals).forEach(id => csv += `${workers.find(x => x.id == id)?.name},${totals[id]}\n`); downloadCSV(`Payouts.csv`, csv); closeModal('export-modal'); };
+window.exportWeeklyPayouts = () => { 
+    const cutoff = document.getElementById('settlement-date').value;
+    const wId = document.getElementById('payout-search-worker').value;
+    const sId = document.getElementById('payout-search-site').value;
+    const from = document.getElementById('payout-date-from').value;
+    const to = document.getElementById('payout-date-to').value;
+
+    const pending = attendance.filter(a => 
+        a.payment === 'pending' && 
+        (!cutoff || a.date <= cutoff) &&
+        (!from || a.date >= from) &&
+        (!to || a.date <= to) &&
+        (!wId || a.workerId == wId) &&
+        (!sId || a.siteId == sId)
+    );
+    
+    if(pending.length === 0) return showToast("No pending payouts for this filter!", "error");
+    
+    let csv = "Worker Name,Total Unpaid Days,Amount Due\n"; const totals = {}; 
+    pending.forEach(a => { 
+        if(!totals[a.workerId]) totals[a.workerId] = { days: 0, due: 0 };
+        totals[a.workerId].days += (a.dayType === 'half' ? 0.5 : 1);
+        totals[a.workerId].due += a.wages; 
+    }); 
+    
+    Object.keys(totals).forEach(id => csv += `${workers.find(x => x.id == id)?.name},${totals[id].days},${totals[id].due}\n`); 
+    downloadCSV(`Payouts.csv`, csv); closeModal('export-modal'); 
+};
 
 // ==========================================
 // 4. RENDERING & UI
@@ -672,11 +719,16 @@ function renderDashboard() {
 }
 
 function renderAttendance(){
-  const from = document.getElementById('filter-date-from').value, wId = document.getElementById('search-worker').value, status = document.getElementById('filter-payment').value;
-  const filtered = attendance.filter(a => (!from || a.date == from) && (!wId || a.workerId == wId) && (!status || a.payment == status)).sort((a,b) => new Date(b.date) - new Date(a.date));
+  const from = document.getElementById('filter-date-from').value, to = document.getElementById('filter-date-to').value, wId = document.getElementById('search-worker').value, sId = document.getElementById('search-site').value, status = document.getElementById('filter-payment').value;
+  const filtered = attendance.filter(a => (!from || a.date >= from) && (!to || a.date <= to) && (!wId || a.workerId == wId) && (!sId || a.siteId == sId) && (!status || a.payment == status)).sort((a,b) => new Date(b.date) - new Date(a.date));
+  const totalPages = Math.ceil(filtered.length / attendanceRowsPerPage) || 1;
+  if (attendanceCurrentPage > totalPages) attendanceCurrentPage = totalPages || 1;
   const paginated = filtered.slice((attendanceCurrentPage-1)*attendanceRowsPerPage, attendanceCurrentPage*attendanceRowsPerPage);
   document.getElementById('attendance-body').innerHTML = paginated.map(a => `<tr><td>${a.date}</td><td><strong>${workers.find(w=>w.id==a.workerId)?.name}</strong></td><td>${sites.find(s=>s.id==a.siteId)?.name}</td><td><span class="secure-amount" onclick="revealAmount()">₹${a.wages}</span></td><td><span class="badge badge-secondary">${a.mode || 'Cash'}</span></td><td><span class="badge ${a.payment === 'paid' ? 'badge-success' : 'badge-warning'}" onclick="togglePayment(${a.id})">${a.payment.toUpperCase()}</span></td><td><button class="btn btn-ghost btn-sm" onclick="editEntry(${a.id})">Edit</button></td></tr>`).join('');
+  const pg = document.getElementById('attendance-pagination');
+  if(filtered.length > attendanceRowsPerPage) { pg.style.display = 'flex'; pg.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="changeAttendancePage(-1)" ${attendanceCurrentPage === 1 ? 'disabled' : ''}>⬅️ Previous</button><span style="font-size: 14px; font-weight:600;">Page ${attendanceCurrentPage} of ${totalPages}</span><button class="btn btn-ghost btn-sm" onclick="changeAttendancePage(1)" ${attendanceCurrentPage === totalPages ? 'disabled' : ''}>Next ➡️</button>`; } else { pg.style.display = 'none'; }
 }
+window.changeAttendancePage = (d) => { attendanceCurrentPage += d; renderAttendance(); };
 
 function renderSitePayments() {
   document.getElementById('payments-body').innerHTML = sitePayments.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => `<tr><td>${p.date}</td><td><strong>${sites.find(s=>s.id==p.siteId)?.name}</strong></td><td style="color:var(--success);"><span class="secure-amount" onclick="revealAmount()">₹${p.amount}</span></td><td><span class="badge badge-info">${p.mode || 'Cash'}</span></td><td>${p.notes || '-'}</td><td><button class="btn btn-ghost btn-sm" onclick="editPayment(${p.id})">Edit</button></td></tr>`).join('');
@@ -684,12 +736,67 @@ function renderSitePayments() {
 
 function renderPayouts() {
   const cutoff = document.getElementById('settlement-date').value;
-  const pending = attendance.filter(a => a.payment === 'pending' && (!cutoff || a.date <= cutoff));
-  const totals = {}; pending.forEach(a => { totals[a.workerId] = (totals[a.workerId] || 0) + a.wages; });
-  document.getElementById('payouts-body').innerHTML = Object.keys(totals).map(id => { const w = workers.find(x => x.id == id); return `<tr><td><strong class="text-link" onclick="viewPayoutDetails(${id})">${w?.name}</strong></td><td>-</td><td style="color:var(--warning);"><span class="secure-amount" onclick="revealAmount()">₹${totals[id]}</span></td><td><button class="btn btn-success btn-sm" onclick="settleWorkerWages(${id}, '${w?.name}', ${totals[id]})">✔️ Mark Paid</button></td></tr>`; }).join('');
+  const wId = document.getElementById('payout-search-worker').value;
+  const sId = document.getElementById('payout-search-site').value;
+  const from = document.getElementById('payout-date-from').value;
+  const to = document.getElementById('payout-date-to').value;
+
+  const pending = attendance.filter(a => 
+    a.payment === 'pending' && 
+    (!cutoff || a.date <= cutoff) &&
+    (!from || a.date >= from) &&
+    (!to || a.date <= to) &&
+    (!wId || a.workerId == wId) &&
+    (!sId || a.siteId == sId)
+  );
+
+  const totals = {}; 
+  pending.forEach(a => { 
+      if(!totals[a.workerId]) totals[a.workerId] = { days: 0, due: 0 };
+      totals[a.workerId].days += (a.dayType === 'half' ? 0.5 : 1);
+      totals[a.workerId].due += a.wages; 
+  });
+
+  const tbody = document.getElementById('payouts-body');
+  if (Object.keys(totals).length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No pending wages found.</td></tr>';
+      return;
+  }
+
+  tbody.innerHTML = Object.keys(totals).map(id => { 
+      const w = workers.find(x => x.id == id); 
+      return `<tr>
+        <td><strong class="text-link" onclick="viewPayoutDetails(${id})">${w?.name}</strong></td>
+        <td>${totals[id].days} days</td>
+        <td style="color:var(--warning);"><span class="secure-amount" onclick="revealAmount()">₹${totals[id].due}</span></td>
+        <td><button class="btn btn-success btn-sm" onclick="settleWorkerWages(${id}, '${w?.name}', ${totals[id].due})">✔️ Mark Paid</button></td>
+      </tr>`; 
+  }).join('');
 }
 
-function viewPayoutDetails(wId) { const cutoff = document.getElementById('settlement-date').value; const pending = attendance.filter(a => a.workerId == wId && a.payment === 'pending' && (!cutoff || a.date <= cutoff)); const tbody = document.getElementById('payout-details-body'); tbody.innerHTML = pending.map(a => `<tr><td>${a.date}</td><td>-</td><td>${sites.find(s=>s.id==a.siteId)?.name}</td><td>₹${a.wages}</td><td>${a.mode || 'Cash'}</td></tr>`).join(''); openModal('payout-details-modal'); }
+function viewPayoutDetails(wId) { 
+  const cutoff = document.getElementById('settlement-date').value;
+  const sId = document.getElementById('payout-search-site').value;
+  const from = document.getElementById('payout-date-from').value;
+  const to = document.getElementById('payout-date-to').value;
+
+  const pending = attendance.filter(a => 
+      a.workerId == wId && 
+      a.payment === 'pending' && 
+      (!cutoff || a.date <= cutoff) &&
+      (!from || a.date >= from) &&
+      (!to || a.date <= to) &&
+      (!sId || a.siteId == sId)
+  );
+
+  const tbody = document.getElementById('payout-details-body'); 
+  if(pending.length === 0){
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No records found.</td></tr>';
+  } else {
+      tbody.innerHTML = pending.map(a => `<tr><td>${a.date}</td><td>${a.dayType === 'half' ? 'Half' : 'Full'}</td><td>${sites.find(s=>s.id==a.siteId)?.name}</td><td>₹${a.wages}</td><td>${a.mode || 'Cash'}</td></tr>`).join(''); 
+  }
+  openModal('payout-details-modal'); 
+}
 
 function renderQuickEntryList() {
   document.getElementById('tab-qe-workers-list').innerHTML = workers.map(w => `<div class="qe-item"><input type="checkbox" class="qe-checkbox" id="tab-qe-check-${w.id}" value="${w.id}"><label for="tab-qe-check-${w.id}">${w.name}</label><div style="display:flex; gap:8px; align-items:center;"><span>₹</span><input type="number" id="tab-qe-wage-${w.id}" value="${w.rate}" class="input btn-sm" style="width:80px"></div></div>`).join('');
@@ -706,7 +813,23 @@ function settleWorkerWages(id, name, amount) {
 document.getElementById('confirm-settle-btn').onclick = () => {
     const mode = document.getElementById('settle-mode').value;
     const cutoff = document.getElementById('settlement-date').value;
-    attendance = attendance.map(a => { if(a.workerId == activeSettleId && a.payment === 'pending' && (!cutoff || a.date <= cutoff)) { a.payment = 'paid'; a.mode = mode; } return a; });
+    const sId = document.getElementById('payout-search-site').value;
+    const from = document.getElementById('payout-date-from').value;
+    const to = document.getElementById('payout-date-to').value;
+
+    attendance = attendance.map(a => { 
+        if(a.workerId == activeSettleId && 
+           a.payment === 'pending' && 
+           (!cutoff || a.date <= cutoff) &&
+           (!from || a.date >= from) &&
+           (!to || a.date <= to) &&
+           (!sId || a.siteId == sId)
+        ) { 
+            a.payment = 'paid'; 
+            a.mode = mode; 
+        } 
+        return a; 
+    });
     saveData(); closeModal('settle-modal'); showToast("Wages Settled!");
 };
 
@@ -728,9 +851,9 @@ function editSite(id){ const s = sites.find(x => x.id == id); editSiteId = id; d
 function editPayment(id){ const p = sitePayments.find(x => x.id == id); editPaymentId = id; document.getElementById('payment-date').value = p.date; document.getElementById('payment-amount').value = p.amount; document.getElementById('payment-mode').value = p.mode || 'Cash'; openModal('payment-modal', 'Edit Payment'); }
 function editEntry(id){ const a = attendance.find(x => x.id == id); editEntryId = id; document.getElementById('entry-date').value = a.date; document.getElementById('entry-wages').value = a.wages; document.getElementById('entry-mode').value = a.mode || 'Cash'; openModal('entry-modal', 'Edit Record'); }
 
-['filter-date-from','search-worker','filter-payment'].forEach(id => document.getElementById(id).onchange = renderAttendance);
+['filter-date-from','filter-date-to','search-worker','search-site','filter-payment'].forEach(id => document.getElementById(id).addEventListener('change', () => { attendanceCurrentPage = 1; renderAttendance(); }));
 ['dashboard-date-from','dashboard-date-to','dashboard-site'].forEach(id => document.getElementById(id).onchange = renderDashboard);
-document.getElementById('settlement-date').onchange = renderPayouts;
+['settlement-date','payout-search-worker','payout-search-site','payout-date-from','payout-date-to'].forEach(id => document.getElementById(id).onchange = renderPayouts);
 document.querySelectorAll('.nav-item').forEach(i => i.onclick = () => switchTab(i.dataset.tab));
 
 function renderAll(){ renderWorkers(); renderSites(); renderSitePayments(); renderAttendance(); renderPayouts(); renderQuickEntryList(); renderDashboard(); updatePrivacyUI(); }
