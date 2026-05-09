@@ -115,6 +115,274 @@ body {
 
 /* Privacy Blur Feature */
 .secure-amount { filter: blur(6px); cursor: pointer; transition: filter 0.3s ease; user-select: none; border-radius: 4px; }
+body.privacy-unlocked .secure-amount { filter: none !important; -webkit-filter: none !important; opacity: 1 !important; text-shadow: none !important; cursor: default !important; }
+
+/* KEYPAD STYLES */
+.pin-display { display: flex; justify-content: center; gap: 16px; margin-bottom: 32px; height: 24px; align-items: center;}
+.pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); transition: all 0.2s; }
+.pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.keypad-btn { padding: 18px; font-size: 22px; font-weight: 700; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; transition: all 0.1s; user-select: none;}
+.keypad-btn:active { transform: scale(0.95); background: var(--border); }
+.keypad-btn.action { background: var(--card); font-size: 16px; color: var(--muted); border: none;}
+
+/* Modals */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 1000; padding: 20px;}
+.modal.active { display: flex; }
+.modal-card { background: var(--card); padding: 32px; border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5); animation: slideUp 0.3s ease; }
+@keyframes slideUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+/* Toasts & Connection Status */
+#toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
+.toast { padding: 16px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: var(--shadow); animation: slideInRight 0.3s ease forwards; display: flex; align-items: center; gap: 8px; }
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+.toast.info { background: var(--info); }
+.toast.fade-out { animation: fadeOutRight 0.3s ease forwards; }
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+
+.cloud-status { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border); }
+.cloud-status.online { color: var(--success); }
+.cloud-status.offline { color: var(--warning); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.cloud-status.online .status-dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
+.cloud-status.offline .status-dot { background: var(--warning); }
+
+/* MOBILE RESPONSIVE STYLES */
+#mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1500; }
+
+@media(max-width:768px){ 
+  #mobile-menu-btn { display: block !important; }
+  .sidebar { position: fixed; top: 0; bottom: 0; left: -260px; width: 250px; z-index: 2000; transition: left 0.3s ease; display: flex !important; }
+  .sidebar.show { left: 0; }
+  .topbar { padding: 16px; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .topbar-right-controls { width: 100%; justify-content: space-between; gap: 8px;}
+  .content { padding: 16px; } 
+}
+
+@media print {
+  .sidebar, .topbar, .toolbar, .btn, #toast-container, .pagination, #mobile-overlay, .secure-amount { filter: none !important; -webkit-filter: none !important;}
+  .main { padding: 0; background: white; color: black; }
+  .card { box-shadow: none; border: none; padding: 0; margin: 0;}
+  .content { padding: 0; }
+  .badge { border: 1px solid black; background: white !important; color: black !important; }
+  button { display: none !important; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<!-- MOBILE OVERLAY -->
+<div id="mobile-overlay"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">Account<span>Hub</span></div>
+  <div class="nav-item active" data-tab="dashboard">📊 Dashboard</div>
+  <div class="nav-item" data-tab="quick-entry">⚡ Bulk Entry</div>
+  <div class="nav-item" data-tab="attendance">🗓 Daily Log</div>
+  <div class="nav-item" data-tab="payouts">💰 Weekly Payouts</div>
+  <div class="nav-item" data-tab="site-payments">🏢 Site Payments</div>
+  <div class="nav-item" data-tab="workers">👷 Workers</div>
+  <div class="nav-item" data-tab="sites">🏗 Manage Sites</div>
+</aside>
+
+<main class="main">
+<!-- TOPBAR -->
+<header class="topbar">
+  <div style="display:flex; align-items:center; gap: 12px;">
+    <button id="mobile-menu-btn" style="background:transparent; border:none; color:var(--text); font-size:24px; cursor:pointer; display:none;">☰</button>
+    <h2 id="page-title" style="font-size: 20px;">Dashboard</h2>
+  </div>
+  
+  <div class="topbar-right-controls" style="display:flex; align-items:center; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+    <div id="connection-status" class="cloud-status online">
+      <div class="status-dot"></div> <span id="connection-text">Synced</span>
+    </div>
+    
+    <button id="privacy-toggle-btn" onclick="togglePrivacy()" title="Toggle Privacy" style="background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius: 8px; padding: 6px 12px; cursor:pointer; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; transition:all 0.2s;">
+      👁️ Show Data
+    </button>
+    
+    <button onclick="changePin()" title="Change PIN" style="background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:18px; padding: 4px;">⚙️</button>
+    
+    <div style="display:flex; align-items:center; gap: 8px; background: var(--bg); padding: 4px 12px; border-radius: 8px; border: 1px solid var(--border);">
+      <span style="font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: 0.5px;">CYCLE:</span>
+      <select class="select btn-sm" id="global-pay-cycle" style="width: auto; padding: 4px 8px; font-weight: 600; border:none; outline:none; background:transparent;" onchange="cycleChanged()">
+        <option value="sat-fri">Sat - Fri</option>
+        <option value="mon-sat">Mon - Sat</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<div class="content">
+
+<!-- DASHBOARD TAB -->
+<div class="tab-content active" id="dashboard">
+  <div class="toolbar">
+    <!-- Filters Hardwired to renderDashboard -->
+    <input type="date" class="input" id="dashboard-date-from" title="From Date" onchange="renderDashboard()" oninput="renderDashboard()">
+    <input type="date" class="input" id="dashboard-date-to" title="To Date" onchange="renderDashboard()" oninput="renderDashboard()">
+    <select class="select" id="dashboard-site" onchange="renderDashboard()"><option value="">All Sites</option></select>
+  </div>
+
+  <div class="grid">
+    <div class="card stat-card">
+      <div class="stat-label">Pending Worker Wages</div>
+      <div class="stat-value" style="color: var(--warning)" id="stat-pending">₹0</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">Total Wages Paid</div>
+      <div class="stat-value" style="color: var(--danger)" id="stat-paid">₹0</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">Site Revenue (Received)</div>
+      <div class="stat-value" style="color: var(--success)" id="stat-revenue">₹0</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-label">Active Sites</div>
+      <div class="stat-value" style="color: var(--info)" id="stat-sites">0</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:16px; color: var(--muted);">Recent Daily Attendance</h3>
+    <div class="table-container">
+      <table class="table">
+        <thead><tr><th>Date</th><th>Worker</th><th>Site</th><th>Wages</th><th>Status</th></tr></thead>
+        <tbody id="activity-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK ENTRY TAB -->
+<div class="tab-content" id="quick-entry">
+  <div class="card" style="max-width: 900px; margin: 0 auto;">
+    <div style="margin-bottom: 24px;">
+      <h3>⚡ Bulk Attendance Entry</h3>
+      <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">Select site and check off present workers.</p>
+    </div>
+
+    <form id="tab-quick-entry-form">
+      <div style="display:flex; gap:16px; margin-bottom: 24px; flex-wrap: wrap;">
+        <div style="flex:1; min-width: 200px;">
+          <label style="display:block;margin-bottom:8px;font-weight:600;">Date</label>
+          <input type="date" class="input" id="tab-qe-date" required>
+        </div>
+        <div style="flex:1; min-width: 200px;">
+          <label style="display:block;margin-bottom:8px;font-weight:600;">Select Site</label>
+          <select class="select" id="tab-qe-site" required></select>
+        </div>
+      </div>
+      
+      <div style="background: var(--bg); padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <strong>Worker Roster</strong>
+          <button type="button" class="btn btn-ghost btn-sm" id="qe-toggle-all">Select All</button>
+        </div>
+        <div id="tab-qe-workers-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end;">
+        <button type="submit" class="btn btn-primary" style="padding: 14px 28px;">💾 Save Attendance</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- DAILY LOG TAB -->
+<div class="tab-content" id="attendance">
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 16px; margin-bottom:24px;">
+      <h3>Daily Log Records</h3>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-ghost" onclick="window.print()">🖨 Print</button>
+        <button type="button" class="btn btn-success" onclick="openModal('export-modal')">📥 Export Data</button>
+        <button type="button" class="btn btn-primary" id="add-entry-btn">+ Single Entry</button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <!-- Filters Hardwired to renderAttendance -->
+      <input type="date" class="input" id="filter-date-from" onchange="attendanceCurrentPage=1; renderAttendance()" oninput="attendanceCurrentPage=1; renderAttendance()">
+      <input type="date" class="input" id="filter-date-to" onchange="attendanceCurrentPage=1; renderAttendance()" oninput="attendanceCurrentPage=1; renderAttendance()">
+      <select class="select" id="search-worker" onchange="attendanceCurrentPage=1; renderAttendance()"><option value="">All Workers</option></select>
+      <select class="select" id="search-site" onchange="attendanceCurrentPage=1; renderAttendance()"><option value="">All Sites</option></select>
+      <select class="select" id="filter-payment" onchange="attendanceCurrentPage=1; renderAttendance()">
+        <option value="">All Statuses</option><option value="paid">Paid</option><option value="pending">Pending</option>
+      </select>
+    </div>
+
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr><th>Date</th><th>Worker</th><th>Site</th><th>Wages</th><th>Mode</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody id="attendance-body"></tbody>
+      </table>
+    </div>
+    <div id="attendance-pagination" class="pagination"></div>
+  </div>
+</div>
+
+<!-- PAYOUTS TAB -->
+<div class="tab-content" id="payouts">
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+      <div>
+        <h3>Weekly Payouts</h3>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">Pending wages dynamically grouped by each Site's specific Pay Cycle.</p>
+      </div>
+      <div style="background: var(--bg); padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
+        <label style="font-weight:600; font-size: 13px;">Calculate Up To Date:</label>
+        <input type="date" class="input" id="settlement-date" style="width: auto; color: var(--accent);" onchange="renderPayouts()" oninput="renderPayouts()">
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <!-- Filters Hardwired to renderPayouts -->
+      <input type="date" class="input" id="payout-date-from" onchange="renderPayouts()" oninput="renderPayouts()">
+      <input type="date" class="input" id="payout-date-to" onchange="renderPayouts()" oninput="renderPayouts()">
+      <select class="select" id="payout-search-worker" onchange="renderPayouts()"><option value="">All Workers</option></select>
+      <select class="select" id="payout-search-site" onchange="renderPayouts()"><option value="">All Sites</option></select>
+    </div>
+
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr><th>Worker Name</th><th>Total Unpaid Days</th><th>Amount Due</th><th>Action</th></tr>
+        </thead>
+        <tbody id="payouts-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SITE PAYMENTS TAB -->
+<div class="tab-content" id="site-payments">
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <h3>Site Payments Received</h3>
+      <button type="button" class="btn btn-success" id="add-payment-btn">+ Add Payment</button>
+    </div>
+    <div class="table-container">
+      <table class="table">
+     /* Pagination Controls */
+.pagination { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 16px; }
+
+/* Quick Entry Items */
+.qe-item { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; transition: background 0.2s; flex-wrap: wrap; background: var(--card);}
+.qe-item:hover { background: var(--bg); border-color: var(--accent); }
+.qe-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); cursor: pointer; }
+.qe-item label { flex: 1; cursor: pointer; font-weight: 600; font-size: 15px; min-width: 150px; }
+
+/* Privacy Blur Feature */
+.secure-amount { filter: blur(6px); cursor: pointer; transition: filter 0.3s ease; user-select: none; border-radius: 4px; }
 body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: default; }
 
 /* KEYPAD STYLES */
