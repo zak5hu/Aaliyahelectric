@@ -113,7 +113,7 @@ body {
 .qe-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); cursor: pointer; }
 .qe-item label { flex: 1; cursor: pointer; font-weight: 600; font-size: 15px; min-width: 150px; }
 
-/* Privacy Blur Feature (Updated for Global Unlock) */
+/* Privacy Blur Feature */
 .secure-amount { filter: blur(6px); cursor: pointer; transition: filter 0.3s ease; user-select: none; border-radius: 4px; }
 body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: default; }
 
@@ -203,12 +203,10 @@ body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: defau
       <div class="status-dot"></div> <span id="connection-text">Synced</span>
     </div>
     
-    <!-- TOGGLE PRIVACY BUTTON -->
     <button id="privacy-toggle-btn" onclick="togglePrivacy()" title="Toggle Privacy" style="background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius: 8px; padding: 6px 12px; cursor:pointer; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; transition:all 0.2s;">
       👁️ Show Data
     </button>
     
-    <!-- CHANGE PIN BUTTON (Small Icon) -->
     <button onclick="changePin()" title="Change PIN" style="background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:18px; padding: 4px;">⚙️</button>
     
     <div style="display:flex; align-items:center; gap: 8px; background: var(--bg); padding: 4px 12px; border-radius: 8px; border: 1px solid var(--border);">
@@ -321,7 +319,7 @@ body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: defau
     <div class="table-container">
       <table class="table">
         <thead>
-          <tr><th>Date</th><th>Worker</th><th>Site</th><th>Wages</th><th>Status</th><th>Action</th></tr>
+          <tr><th>Date</th><th>Worker</th><th>Site</th><th>Wages</th><th>Mode</th><th>Status</th><th>Action</th></tr>
         </thead>
         <tbody id="attendance-body"></tbody>
       </table>
@@ -372,7 +370,7 @@ body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: defau
     <div class="table-container">
       <table class="table">
         <thead>
-          <tr><th>Date</th><th>Site</th><th>Amount (₹)</th><th>Notes</th><th>Action</th></tr>
+          <tr><th>Date</th><th>Site</th><th>Amount (₹)</th><th>Mode</th><th>Notes</th><th>Action</th></tr>
         </thead>
         <tbody id="payments-body"></tbody>
       </table>
@@ -422,31 +420,37 @@ body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: defau
 
 <!-- MODALS -->
 
+<!-- Settlement Mode Modal -->
+<div class="modal" id="settle-modal">
+  <div class="modal-card" style="max-width: 400px;">
+    <h3 style="margin-bottom:16px;">Settle Wages</h3>
+    <p id="settle-info" style="margin-bottom:20px; font-size:14px; color:var(--muted);"></p>
+    <div class="form-group">
+      <label>Payment Mode</label>
+      <select class="select" id="settle-mode">
+        <option>Cash</option><option>GPay</option><option>Online</option><option>Bank Transfer</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:12px; justify-content:flex-end;">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('settle-modal')">Cancel</button>
+      <button type="button" class="btn btn-success" id="confirm-settle-btn">Confirm Payment</button>
+    </div>
+  </div>
+</div>
+
 <!-- Custom PIN Modal -->
 <div class="modal" id="pin-modal">
   <div class="modal-card" style="max-width: 320px; text-align: center;">
     <h3 id="pin-modal-title" style="margin-bottom: 24px;">Enter PIN</h3>
-    
     <div class="pin-display">
-      <div class="pin-dot" id="dot-1"></div>
-      <div class="pin-dot" id="dot-2"></div>
-      <div class="pin-dot" id="dot-3"></div>
-      <div class="pin-dot" id="dot-4"></div>
+      <div class="pin-dot" id="dot-1"></div><div class="pin-dot" id="dot-2"></div>
+      <div class="pin-dot" id="dot-3"></div><div class="pin-dot" id="dot-4"></div>
     </div>
-
     <div class="keypad">
-      <button class="keypad-btn" onclick="appendPin('1')">1</button>
-      <button class="keypad-btn" onclick="appendPin('2')">2</button>
-      <button class="keypad-btn" onclick="appendPin('3')">3</button>
-      <button class="keypad-btn" onclick="appendPin('4')">4</button>
-      <button class="keypad-btn" onclick="appendPin('5')">5</button>
-      <button class="keypad-btn" onclick="appendPin('6')">6</button>
-      <button class="keypad-btn" onclick="appendPin('7')">7</button>
-      <button class="keypad-btn" onclick="appendPin('8')">8</button>
-      <button class="keypad-btn" onclick="appendPin('9')">9</button>
-      <button class="keypad-btn action" onclick="closePinModal()">Cancel</button>
-      <button class="keypad-btn" onclick="appendPin('0')">0</button>
-      <button class="keypad-btn action" onclick="backspacePin()" style="color:var(--danger)">⌫</button>
+      <button class="keypad-btn" onclick="appendPin('1')">1</button><button class="keypad-btn" onclick="appendPin('2')">2</button><button class="keypad-btn" onclick="appendPin('3')">3</button>
+      <button class="keypad-btn" onclick="appendPin('4')">4</button><button class="keypad-btn" onclick="appendPin('5')">5</button><button class="keypad-btn" onclick="appendPin('6')">6</button>
+      <button class="keypad-btn" onclick="appendPin('7')">7</button><button class="keypad-btn" onclick="appendPin('8')">8</button><button class="keypad-btn" onclick="appendPin('9')">9</button>
+      <button class="keypad-btn action" onclick="closePinModal()">Cancel</button><button class="keypad-btn" onclick="appendPin('0')">0</button><button class="keypad-btn action" onclick="backspacePin()" style="color:var(--danger)">⌫</button>
     </div>
   </div>
 </div>
@@ -456,16 +460,12 @@ body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: defau
   <div class="modal-card" style="max-width: 400px; text-align:center;">
     <h3 style="margin-bottom:8px;">📥 Export Data to Excel</h3>
     <p style="color: var(--muted); font-size: 14px; margin-bottom: 24px;">Choose which records to download.</p>
-    
     <div style="display:flex; flex-direction:column; gap:12px;">
       <button class="btn btn-primary" onclick="exportAttendance()">🗓 Export Daily Attendance</button>
       <button class="btn btn-warning" onclick="exportWeeklyPayouts()">💰 Export Pending Weekly Payouts</button>
       <button class="btn btn-success" onclick="exportSitePayments()">🏢 Export Site Payments</button>
     </div>
-    
-    <div style="display:flex; justify-content:flex-end; margin-top:24px;">
-      <button type="button" class="btn btn-ghost" onclick="closeModal('export-modal')">Close</button>
-    </div>
+    <div style="display:flex; justify-content:flex-end; margin-top:24px;"><button type="button" class="btn btn-ghost" onclick="closeModal('export-modal')">Close</button></div>
   </div>
 </div>
 
@@ -476,14 +476,12 @@ body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: defau
     <div class="table-container" style="max-height: 450px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
       <table class="table">
         <thead style="position: sticky; top: 0; background: var(--card); z-index: 2;">
-          <tr><th>Date</th><th>Day</th><th>Site (Cycle)</th><th>Wage (₹)</th></tr>
+          <tr><th>Date</th><th>Day</th><th>Site</th><th>Wage</th><th>Mode</th></tr>
         </thead>
         <tbody id="payout-details-body"></tbody>
       </table>
     </div>
-    <div style="display:flex; justify-content:flex-end; margin-top:24px;">
-      <button type="button" class="btn btn-ghost" onclick="closeModal('payout-details-modal')">Close</button>
-    </div>
+    <div style="display:flex; justify-content:flex-end; margin-top:24px;"><button type="button" class="btn btn-ghost" onclick="closeModal('payout-details-modal')">Close</button></div>
   </div>
 </div>
 
@@ -503,6 +501,12 @@ body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: defau
         <label>Payment Status</label>
         <select class="select" id="entry-payment"><option value="pending">Pending</option><option value="paid">Paid</option></select>
       </div>
+      <div class="form-group">
+        <label>Payment Mode</label>
+        <select class="select" id="entry-mode">
+          <option>Cash</option><option>GPay</option><option>Online</option><option>Bank Transfer</option>
+        </select>
+      </div>
       <div style="display:flex; gap:12px; justify-content:flex-end;">
         <button type="button" class="btn btn-ghost" onclick="closeModal('entry-modal')">Cancel</button>
         <button type="submit" class="btn btn-primary">Save Record</button>
@@ -518,6 +522,12 @@ body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: defau
       <div class="form-group"><label>Date</label><input type="date" class="input" id="payment-date" required></div>
       <div class="form-group"><label>Site</label><select class="select" id="payment-site" required></select></div>
       <div class="form-group"><label>Amount Received (₹)</label><input type="number" class="input" id="payment-amount" required></div>
+      <div class="form-group">
+        <label>Payment Mode</label>
+        <select class="select" id="payment-mode">
+          <option>Cash</option><option>GPay</option><option>Online</option><option>Bank Transfer</option>
+        </select>
+      </div>
       <div class="form-group"><label>Notes</label><input type="text" class="input" id="payment-notes" placeholder="Advance, Bank, etc."></div>
       <div style="display:flex; gap:12px; justify-content:flex-end;">
         <button type="button" class="btn btn-ghost" onclick="closeModal('payment-modal')">Cancel</button>
@@ -527,48 +537,28 @@ body.privacy-unlocked .secure-amount { filter: blur(0) !important; cursor: defau
   </div>
 </div>
 
+<!-- WORKER & SITE MODALS (Existing) -->
 <div class="modal" id="worker-modal">
   <div class="modal-card" style="max-width: 500px;">
     <h3 style="margin-bottom:24px;" id="worker-modal-title">Worker</h3>
     <form id="worker-form">
       <div class="form-group"><label>Name</label><input class="input" id="worker-name" required></div>
-      <div class="form-group">
-        <label>Category</label>
-        <select class="select" id="worker-category">
-          <option>Electrician</option><option>Helper</option><option>Plumber</option><option>Mason</option>
-        </select>
-      </div>
+      <div class="form-group"><label>Category</label><select class="select" id="worker-category"><option>Electrician</option><option>Helper</option><option>Plumber</option><option>Mason</option></select></div>
       <div class="form-group"><label>Phone</label><input class="input" id="worker-phone"></div>
       <div class="form-group"><label>Daily Rate (₹)</label><input type="number" class="input" id="worker-rate" required></div>
-      <div style="display:flex; gap:12px; justify-content:flex-end;">
-        <button type="button" class="btn btn-ghost" onclick="closeModal('worker-modal')">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save Worker</button>
-      </div>
+      <div style="display:flex; gap:12px; justify-content:flex-end;"><button type="button" class="btn btn-ghost" onclick="closeModal('worker-modal')">Cancel</button><button type="submit" class="btn btn-primary">Save Worker</button></div>
     </form>
   </div>
 </div>
-
 <div class="modal" id="site-modal">
   <div class="modal-card" style="max-width: 500px;">
     <h3 style="margin-bottom:24px;" id="site-modal-title">Site</h3>
     <form id="site-form">
       <div class="form-group"><label>Site Name</label><input class="input" id="site-name" required></div>
       <div class="form-group"><label>Location</label><input class="input" id="site-location" required></div>
-      <div class="form-group">
-        <label>Payment Cycle</label>
-        <select class="select" id="site-cycle">
-          <option value="sat-fri">Sat - Fri (Settles on Friday)</option>
-          <option value="mon-sat">Mon - Sat (Settles on Saturday)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Status</label>
-        <select class="select" id="site-status"><option>Active</option><option>Completed</option></select>
-      </div>
-      <div style="display:flex; gap:12px; justify-content:flex-end;">
-        <button type="button" class="btn btn-ghost" onclick="closeModal('site-modal')">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save Site</button>
-      </div>
+      <div class="form-group"><label>Payment Cycle</label><select class="select" id="site-cycle"><option value="sat-fri">Sat - Fri</option><option value="mon-sat">Mon - Sat</option></select></div>
+      <div class="form-group"><label>Status</label><select class="select" id="site-status"><option>Active</option><option>Completed</option></select></div>
+      <div style="display:flex; gap:12px; justify-content:flex-end;"><button type="button" class="btn btn-ghost" onclick="closeModal('site-modal')">Cancel</button><button type="submit" class="btn btn-primary">Save Site</button></div>
     </form>
   </div>
 </div>
@@ -597,381 +587,153 @@ const dataRef = db.collection("accountHub").doc("mainData");
 let workers = [], sites = [], attendance = [], sitePayments = [];
 let isLoaded = false, lastSelectedSite = null;
 let editWorkerId = null, editSiteId = null, editEntryId = null, editPaymentId = null;
-let attendanceCurrentPage = 1;
-const attendanceRowsPerPage = 15;
+let attendanceCurrentPage = 1, attendanceRowsPerPage = 15;
 const cycleSelect = document.getElementById('global-pay-cycle');
 
 // ==========================================
 // CUSTOM ON-SCREEN PIN KEYPAD LOGIC
 // ==========================================
-let appPin = localStorage.getItem('appPin');
-if (!appPin) {
-    appPin = '1234'; // Default PIN
-    localStorage.setItem('appPin', appPin);
-}
-
-let currentPinInput = '';
-let pinResolveCallback = null;
-let isPrivacyUnlocked = false; // Global lock state
+let appPin = localStorage.getItem('appPin') || '1234';
+let currentPinInput = '', pinResolveCallback = null, isPrivacyUnlocked = false;
 
 function updatePrivacyUI() {
     const btn = document.getElementById('privacy-toggle-btn');
-    if (isPrivacyUnlocked) {
-        document.body.classList.add('privacy-unlocked');
-        btn.innerHTML = '🔒 Hide Data';
-        btn.style.color = 'var(--danger)';
-        btn.style.borderColor = 'var(--danger)';
-    } else {
-        document.body.classList.remove('privacy-unlocked');
-        btn.innerHTML = '👁️ Show Data';
-        btn.style.color = 'var(--text)';
-        btn.style.borderColor = 'var(--border)';
-    }
+    if (isPrivacyUnlocked) { document.body.classList.add('privacy-unlocked'); btn.innerHTML = '🔒 Hide Data'; btn.style.color = 'var(--danger)'; btn.style.borderColor = 'var(--danger)'; } 
+    else { document.body.classList.remove('privacy-unlocked'); btn.innerHTML = '👁️ Show Data'; btn.style.color = 'var(--text)'; btn.style.borderColor = 'var(--border)'; }
 }
 
-// Opens the Custom PIN modal and returns a Promise
-function requestPin(titleText) {
-    return new Promise((resolve) => {
-        document.getElementById('pin-modal-title').textContent = titleText;
-        currentPinInput = '';
-        updatePinDisplay();
-        pinResolveCallback = resolve;
-        openModal('pin-modal');
-    });
-}
+function requestPin(titleText) { return new Promise((res) => { document.getElementById('pin-modal-title').textContent = titleText; currentPinInput = ''; updatePinDisplay(); pinResolveCallback = res; openModal('pin-modal'); }); }
+function updatePinDisplay() { for (let i = 1; i <= 4; i++) { const dot = document.getElementById(`dot-${i}`); if (i <= currentPinInput.length) dot.classList.add('filled'); else dot.classList.remove('filled'); } }
+window.appendPin = (digit) => { if (currentPinInput.length < 4) { currentPinInput += digit; updatePinDisplay(); if (currentPinInput.length === 4) setTimeout(() => { closeModal('pin-modal'); if (pinResolveCallback) pinResolveCallback(currentPinInput); }, 150); } };
+window.backspacePin = () => { if (currentPinInput.length > 0) { currentPinInput = currentPinInput.slice(0, -1); updatePinDisplay(); } };
+window.closePinModal = () => { closeModal('pin-modal'); if (pinResolveCallback) pinResolveCallback(null); };
 
-function updatePinDisplay() {
-    for (let i = 1; i <= 4; i++) {
-        const dot = document.getElementById(`dot-${i}`);
-        if (i <= currentPinInput.length) {
-            dot.classList.add('filled');
-        } else {
-            dot.classList.remove('filled');
-        }
-    }
-}
-
-window.appendPin = function(digit) {
-    if (currentPinInput.length < 4) {
-        currentPinInput += digit;
-        updatePinDisplay();
-        
-        // Auto-submit when 4 digits are entered
-        if (currentPinInput.length === 4) {
-            setTimeout(() => {
-                closeModal('pin-modal');
-                if (pinResolveCallback) pinResolveCallback(currentPinInput);
-            }, 150);
-        }
-    }
+window.togglePrivacy = async () => {
+    if (isPrivacyUnlocked) { isPrivacyUnlocked = false; updatePrivacyUI(); showToast("Locked.", "info"); } 
+    else { const ent = await requestPin("🔒 Enter PIN"); if (ent === appPin) { isPrivacyUnlocked = true; updatePrivacyUI(); showToast("Unlocked.", "success"); } else if (ent !== null) showToast("Incorrect PIN!", "error"); }
 };
-
-window.backspacePin = function() {
-    if (currentPinInput.length > 0) {
-        currentPinInput = currentPinInput.slice(0, -1);
-        updatePinDisplay();
-    }
-};
-
-window.closePinModal = function() {
-    closeModal('pin-modal');
-    if (pinResolveCallback) pinResolveCallback(null);
-};
-
-// Global Manual Toggle
-window.togglePrivacy = async function() {
-    if (isPrivacyUnlocked) {
-        // Manual lock
-        isPrivacyUnlocked = false;
-        updatePrivacyUI();
-        showToast("Data is now Locked.", "info");
-    } else {
-        // Try to unlock
-        const entered = await requestPin("🔒 Enter PIN to Show All");
-        if (entered === null) return;
-        
-        if (entered === appPin) {
-            isPrivacyUnlocked = true;
-            updatePrivacyUI();
-            showToast("Data Unlocked.", "success");
-        } else {
-            showToast("Incorrect PIN!", "error");
-        }
-    }
-};
-
-// Clicking a specific number also unlocks everything
-window.revealAmount = async function() {
-    if (isPrivacyUnlocked) return; // Already unlocked
-
-    const entered = await requestPin("🔒 Enter PIN to Show All");
-    if (entered === null) return;
-
-    if (entered === appPin) {
-        isPrivacyUnlocked = true;
-        updatePrivacyUI();
-        showToast("All Data Unlocked.", "success");
-    } else {
-        showToast("Incorrect PIN!", "error");
-    }
-};
-
-window.changePin = async function() {
-    const current = await requestPin("Enter CURRENT PIN:");
-    if (current === null) return; 
-    
-    if (current === appPin) {
-        setTimeout(async () => {
-            const next = await requestPin("Enter NEW 4-digit PIN:");
-            if (next && next.length === 4) {
-                appPin = next;
-                localStorage.setItem('appPin', appPin);
-                showToast("PIN updated successfully!", "success");
-            } else if (next !== null) {
-                showToast("PIN must be 4 digits.", "error");
-            }
-        }, 250);
-    } else {
-        showToast("Incorrect current PIN.", "error");
-    }
-};
-
-// Initialize UI
-updatePrivacyUI();
-
+window.revealAmount = async () => { if (isPrivacyUnlocked) return; const ent = await requestPin("🔒 Enter PIN"); if (ent === appPin) { isPrivacyUnlocked = true; updatePrivacyUI(); showToast("Unlocked.", "success"); } else if (ent !== null) showToast("Incorrect PIN!", "error"); };
+window.changePin = async () => { const cur = await requestPin("Enter CURRENT PIN:"); if (cur === appPin) setTimeout(async () => { const nxt = await requestPin("Enter NEW PIN:"); if (nxt && nxt.length === 4) { appPin = nxt; localStorage.setItem('appPin', appPin); showToast("PIN Updated!", "success"); } }, 250); };
 
 // ==========================================
 // 2. FIREBASE SYNC
 // ==========================================
 dataRef.onSnapshot((doc) => {
-  if (doc.exists) {
-    const data = doc.data();
-    workers = data.workers || [];
-    sites = data.sites || [];
-    attendance = data.attendance || [];
-    sitePayments = data.sitePayments || [];
-    if(data.payCycle) cycleSelect.value = data.payCycle;
-  } else {
-    workers = [{id:1,name:'Ravi Kumar',category:'Electrician',phone:'9876543210',rate:900},{id:2,name:'Mani',category:'Helper',phone:'9876543211',rate:600}];
-    sites = [{id:1,name:'OMR Site',location:'Chennai',status:'Active', payCycle: 'sat-fri'}];
-    saveData();
-  }
+  if (doc.exists) { const data = doc.data(); workers = data.workers || []; sites = data.sites || []; attendance = data.attendance || []; sitePayments = data.sitePayments || []; if(data.payCycle) cycleSelect.value = data.payCycle; } 
+  else { workers = [{id:1,name:'Ravi Kumar',category:'Electrician',phone:'9876543210',rate:900}]; sites = [{id:1,name:'OMR Site',location:'Chennai',status:'Active', payCycle: 'sat-fri'}]; saveData(); }
   isLoaded = true; renderAll();
 });
-
-function saveData(){
-  if(!isLoaded) return;
-  const statusDiv = document.getElementById('connection-status');
-  const statusText = document.getElementById('connection-text');
-  statusDiv.className = 'cloud-status offline'; statusText.textContent = 'Syncing...';
-  dataRef.set({ workers, sites, attendance, sitePayments, payCycle: cycleSelect.value }).then(() => {
-    statusDiv.className = 'cloud-status online'; statusText.textContent = 'Synced';
-  }).catch(error => { console.error("Error saving:", error); showToast("Error syncing", "error"); });
-}
-
-window.addEventListener('online',  () => { document.getElementById('connection-status').className = 'cloud-status online'; document.getElementById('connection-text').textContent = 'Synced'; });
-window.addEventListener('offline', () => { document.getElementById('connection-status').className = 'cloud-status offline'; document.getElementById('connection-text').textContent = 'Offline (Local)'; });
+function saveData(){ if(!isLoaded) return; const statusDiv = document.getElementById('connection-status'); statusDiv.className = 'cloud-status offline'; dataRef.set({ workers, sites, attendance, sitePayments, payCycle: cycleSelect.value }).then(() => statusDiv.className = 'cloud-status online'); }
 
 // ==========================================
-// 3. EXCEL BACKUP FUNCTIONS
+// 3. EXCEL BACKUP
 // ==========================================
-function downloadCSV(filename, csvContent) {
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-window.exportAttendance = function() {
-    if(attendance.length === 0) return showToast("No records to export!", "error");
-    const sorted = [...attendance].sort((a,b) => new Date(b.date) - new Date(a.date));
-    let csv = "Date,Worker,Site,Wages,Status,Day Type\n";
-    sorted.forEach(a => {
-        const w = workers.find(x => x.id == a.workerId)?.name || 'Deleted';
-        const s = sites.find(x => x.id == a.siteId)?.name || 'Deleted';
-        csv += `${a.date},${w},${s},${a.wages},${a.payment.toUpperCase()},${a.dayType === 'half' ? 'HALF DAY' : 'FULL DAY'}\n`;
-    });
-    downloadCSV(`Attendance_Log_${new Date().toLocaleDateString()}.csv`, csv);
-    closeModal('export-modal');
-};
-
-window.exportSitePayments = function() {
-    if(sitePayments.length === 0) return showToast("No payments to export!", "error");
-    const sorted = [...sitePayments].sort((a,b) => new Date(b.date) - new Date(a.date));
-    let csv = "Date,Site,Amount Received,Notes\n";
-    sorted.forEach(p => {
-        const s = sites.find(x => x.id == p.siteId)?.name || 'Deleted';
-        csv += `${p.date},${s},${p.amount},${p.notes || '-'}\n`;
-    });
-    downloadCSV(`Site_Payments_${new Date().toLocaleDateString()}.csv`, csv);
-    closeModal('export-modal');
-};
-
-window.exportWeeklyPayouts = function() {
-    const cutoff = document.getElementById('settlement-date').value;
-    const pending = attendance.filter(a => a.payment === 'pending' && (!cutoff || a.date <= cutoff));
-    if(pending.length === 0) return showToast("No pending payouts!", "error");
-    
-    const totals = {};
-    pending.forEach(a => {
-        if(!totals[a.workerId]) totals[a.workerId] = { days: 0, due: 0 };
-        totals[a.workerId].days += (a.dayType === 'half' ? 0.5 : 1);
-        totals[a.workerId].due += a.wages;
-    });
-
-    let csv = "Worker Name,Total Unpaid Days,Amount Due\n";
-    Object.keys(totals).forEach(id => {
-        const w = workers.find(x => x.id == id)?.name || 'Unknown';
-        csv += `${w},${totals[id].days},${totals[id].due}\n`;
-    });
-    downloadCSV(`Weekly_Payouts_${new Date().toLocaleDateString()}.csv`, csv);
-    closeModal('export-modal');
-};
+function downloadCSV(filename, csv) { const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", filename); document.body.appendChild(link); link.click(); document.body.removeChild(link); }
+window.exportAttendance = () => { let csv = "Date,Worker,Site,Wages,Mode,Status\n"; attendance.forEach(a => { const w = workers.find(x => x.id == a.workerId)?.name || 'Deleted'; const s = sites.find(x => x.id == a.siteId)?.name || 'Deleted'; csv += `${a.date},${w},${s},${a.wages},${a.mode || 'Cash'},${a.payment}\n`; }); downloadCSV(`Attendance.csv`, csv); closeModal('export-modal'); };
+window.exportSitePayments = () => { let csv = "Date,Site,Amount,Mode,Notes\n"; sitePayments.forEach(p => { const s = sites.find(x => x.id == p.siteId)?.name || 'Deleted'; csv += `${p.date},${s},${p.amount},${p.mode || 'Cash'},${p.notes || '-'}\n`; }); downloadCSV(`SitePayments.csv`, csv); closeModal('export-modal'); };
+window.exportWeeklyPayouts = () => { const cutoff = document.getElementById('settlement-date').value; const pending = attendance.filter(a => a.payment === 'pending' && (!cutoff || a.date <= cutoff)); let csv = "Worker Name,Amount Due\n"; const totals = {}; pending.forEach(a => { totals[a.workerId] = (totals[a.workerId] || 0) + a.wages; }); Object.keys(totals).forEach(id => csv += `${workers.find(x => x.id == id)?.name},${totals[id]}\n`); downloadCSV(`Payouts.csv`, csv); closeModal('export-modal'); };
 
 // ==========================================
-// 4. UI & RENDERING
+// 4. RENDERING & UI
 // ==========================================
-const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-const sidebarEl = document.querySelector('.sidebar');
-const mobileOverlay = document.getElementById('mobile-overlay');
+const mobileMenuBtn = document.getElementById('mobile-menu-btn'), sidebarEl = document.querySelector('.sidebar'), mobileOverlay = document.getElementById('mobile-overlay');
 mobileMenuBtn.onclick = () => { sidebarEl.classList.add('show'); mobileOverlay.style.display = 'block'; };
 mobileOverlay.onclick = () => { sidebarEl.classList.remove('show'); mobileOverlay.style.display = 'none'; };
 
-function getWeekEndDate(dateStr, cycle) {
-  const parts = dateStr.split('-');
-  const d = new Date(parts[0], parts[1] - 1, parts[2]); 
-  const day = d.getDay(); 
-  let diff = (cycle === 'mon-sat') ? (day === 0 ? 6 : 6 - day) : (day === 6 ? 6 : 5 - day);
-  d.setDate(d.getDate() + diff);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function setDefaultSettlementDate() {
-  const d = new Date();
-  const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  document.getElementById('settlement-date').value = getWeekEndDate(todayStr, cycleSelect.value);
-}
-
-cycleSelect.addEventListener('change', () => { saveData(); setDefaultSettlementDate(); renderAll(); showToast(`Pay Cycle changed`, "info"); });
-
-function openModal(id, titleText){ document.getElementById(id).classList.add('active'); if(titleText && document.getElementById(id + '-title')) document.getElementById(id + '-title').textContent = titleText; }
+function getWeekEndDate(dateStr, cycle) { const d = new Date(dateStr); const day = d.getDay(); let diff = (cycle === 'mon-sat') ? (day === 0 ? 6 : 6 - day) : (day === 6 ? 6 : 5 - day); d.setDate(d.getDate() + diff); return d.toISOString().split('T')[0]; }
+function openModal(id, text){ document.getElementById(id).classList.add('active'); if(text && document.getElementById(id + '-title')) document.getElementById(id + '-title').textContent = text; }
 function closeModal(id){ document.getElementById(id).classList.remove('active'); }
-function showToast(m, type = 'success') { const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = `toast ${type}`; t.innerHTML = (type === 'success' ? '✅ ' : (type === 'info' ? 'ℹ️ ' : '❌ ')) + m; c.appendChild(t); setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 300); }, 3000); }
-function switchTab(tabId) { document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tabId)); document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === tabId)); const activeNav = document.querySelector(`.nav-item[data-tab="${tabId}"]`); if(activeNav) document.getElementById('page-title').textContent = activeNav.textContent.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '').trim(); if(window.innerWidth <= 768) { sidebarEl.classList.remove('show'); mobileOverlay.style.display = 'none'; } }
+function showToast(m, type = 'success') { const c = document.getElementById('toast-container'), t = document.createElement('div'); t.className = `toast ${type}`; t.innerHTML = m; c.appendChild(t); setTimeout(() => t.remove(), 3000); }
+function switchTab(tabId) { document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tabId)); document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === tabId)); if(window.innerWidth <= 768) { sidebarEl.classList.remove('show'); mobileOverlay.style.display = 'none'; } }
 
 function renderWorkers(){
   const tbody = document.getElementById('workers-body');
-  tbody.innerHTML = workers.length ? workers.map(w => `<tr><td><strong>${w.name}</strong></td><td>${w.category}</td><td>${w.phone || '-'}</td><td><span class="secure-amount" onclick="revealAmount()">₹${w.rate.toLocaleString()}</span></td><td><button class="btn btn-ghost btn-sm" onclick="editWorker(${w.id})">Edit</button> <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteWorker(${w.id})">Delete</button></td></tr>`).join('') : '<tr><td colspan="5" class="empty-state">No workers.</td></tr>';
-  const opts = '<option value="">All Workers</option>' + workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
-  document.getElementById('search-worker').innerHTML = opts; document.getElementById('payout-search-worker').innerHTML = opts; document.getElementById('entry-worker').innerHTML = workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+  tbody.innerHTML = workers.map(w => `<tr><td><strong>${w.name}</strong></td><td>${w.category}</td><td>${w.phone || '-'}</td><td><span class="secure-amount" onclick="revealAmount()">₹${w.rate}</span></td><td><button class="btn btn-ghost btn-sm" onclick="editWorker(${w.id})">Edit</button></td></tr>`).join('');
+  const opts = workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+  document.getElementById('search-worker').innerHTML = '<option value="">All Workers</option>' + opts; document.getElementById('entry-worker').innerHTML = opts;
 }
 
 function renderSites(){
   const tbody = document.getElementById('sites-body');
-  tbody.innerHTML = sites.length ? sites.map(s => { const cycleBadge = s.payCycle === 'mon-sat' ? '<span class="badge badge-secondary">Mon-Sat</span>' : '<span class="badge badge-info">Sat-Fri</span>'; return `<tr><td><strong>${s.name}</strong></td><td>${s.location}</td><td>${cycleBadge}</td><td><span class="badge ${s.status === 'Active' ? 'badge-success' : 'badge-warning'}">${s.status}</span></td><td><button class="btn btn-ghost btn-sm" onclick="editSite(${s.id})">Edit</button> <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteSite(${s.id})">Delete</button></td></tr>`; }).join('') : '<tr><td colspan="5" class="empty-state">No sites.</td></tr>';
+  tbody.innerHTML = sites.map(s => `<tr><td><strong>${s.name}</strong></td><td>${s.location}</td><td>${s.payCycle}</td><td><span class="badge badge-success">${s.status}</span></td><td><button class="btn btn-ghost btn-sm" onclick="editSite(${s.id})">Edit</button></td></tr>`).join('');
   const opts = sites.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-  document.getElementById('search-site').innerHTML = '<option value="">All Sites</option>' + opts; document.getElementById('payout-search-site').innerHTML = '<option value="">All Sites</option>' + opts; document.getElementById('dashboard-site').innerHTML = '<option value="">All Sites</option>' + opts; document.getElementById('entry-site').innerHTML = opts; document.getElementById('tab-qe-site').innerHTML = opts; document.getElementById('payment-site').innerHTML = opts;
+  document.getElementById('search-site').innerHTML = '<option value="">All Sites</option>' + opts; document.getElementById('entry-site').innerHTML = opts; document.getElementById('payment-site').innerHTML = opts; document.getElementById('tab-qe-site').innerHTML = opts;
 }
 
 function renderDashboard() {
   const from = document.getElementById('dashboard-date-from').value, to = document.getElementById('dashboard-date-to').value, siteId = document.getElementById('dashboard-site').value;
   const filteredAtt = attendance.filter(a => (!from || a.date >= from) && (!to || a.date <= to) && (!siteId || a.siteId == siteId));
   const filteredPay = sitePayments.filter(p => (!from || p.date >= from) && (!to || p.date <= to) && (!siteId || p.siteId == siteId));
-  
-  document.getElementById('stat-pending').innerHTML = `<span class="secure-amount" onclick="revealAmount()">₹${filteredAtt.filter(a => a.payment === 'pending').reduce((t,a)=>t+a.wages,0).toLocaleString()}</span>`;
-  document.getElementById('stat-paid').innerHTML = `<span class="secure-amount" onclick="revealAmount()">₹${filteredAtt.filter(a => a.payment === 'paid').reduce((t,a)=>t+a.wages,0).toLocaleString()}</span>`;
-  document.getElementById('stat-revenue').innerHTML = `<span class="secure-amount" onclick="revealAmount()">₹${filteredPay.reduce((t,p)=>t+Number(p.amount),0).toLocaleString()}</span>`;
-  document.getElementById('stat-sites').textContent = sites.filter(s => s.status === 'Active').length;
-  
+  document.getElementById('stat-pending').innerHTML = `<span class="secure-amount" onclick="revealAmount()">₹${filteredAtt.filter(a => a.payment === 'pending').reduce((t,a)=>t+a.wages,0)}</span>`;
+  document.getElementById('stat-paid').innerHTML = `<span class="secure-amount" onclick="revealAmount()">₹${filteredAtt.filter(a => a.payment === 'paid').reduce((t,a)=>t+a.wages,0)}</span>`;
+  document.getElementById('stat-revenue').innerHTML = `<span class="secure-amount" onclick="revealAmount()">₹${filteredPay.reduce((t,p)=>t+Number(p.amount),0)}</span>`;
   const recent = [...filteredAtt].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
-  document.getElementById('activity-body').innerHTML = recent.length ? recent.map(a => { const w = workers.find(w => w.id == a.workerId) || {name: '-'}; const s = sites.find(s => s.id == a.siteId) || {name: '-'}; const half = a.dayType === 'half' ? '<span class="badge badge-info badge-sm" style="margin-left:5px;">Half</span>' : ''; return `<tr><td>${new Date(a.date).toLocaleDateString()}</td><td><strong class="text-link" onclick="viewDashboardWorkerDetails(${w.id})">${w.name}</strong> ${half}</td><td>${s.name}</td><td><span class="secure-amount" onclick="revealAmount()">₹${a.wages}</span></td><td><span class="badge ${a.payment === 'paid' ? 'badge-success' : 'badge-warning'}">${a.payment.toUpperCase()}</span></td></tr>`; }).join('') : '<tr><td colspan="5" class="empty-state">No activity.</td></tr>';
+  document.getElementById('activity-body').innerHTML = recent.map(a => `<tr><td>${a.date}</td><td>${workers.find(w=>w.id==a.workerId)?.name}</td><td>${sites.find(s=>s.id==a.siteId)?.name}</td><td><span class="secure-amount" onclick="revealAmount()">₹${a.wages}</span></td><td><span class="badge">${a.payment.toUpperCase()}</span></td></tr>`).join('');
 }
 
 function renderAttendance(){
-  const from = document.getElementById('filter-date-from').value, to = document.getElementById('filter-date-to').value, wId = document.getElementById('search-worker').value, sId = document.getElementById('search-site').value, status = document.getElementById('filter-payment').value;
-  const filtered = attendance.filter(a => (!from || a.date >= from) && (!to || a.date <= to) && (!wId || a.workerId == wId) && (!sId || a.siteId == sId) && (!status || a.payment == status)).sort((a,b) => new Date(b.date) - new Date(a.date));
-  const totalPages = Math.ceil(filtered.length / attendanceRowsPerPage) || 1;
-  if (attendanceCurrentPage > totalPages) attendanceCurrentPage = totalPages;
+  const from = document.getElementById('filter-date-from').value, wId = document.getElementById('search-worker').value, status = document.getElementById('filter-payment').value;
+  const filtered = attendance.filter(a => (!from || a.date == from) && (!wId || a.workerId == wId) && (!status || a.payment == status)).sort((a,b) => new Date(b.date) - new Date(a.date));
   const paginated = filtered.slice((attendanceCurrentPage-1)*attendanceRowsPerPage, attendanceCurrentPage*attendanceRowsPerPage);
-  const tbody = document.getElementById('attendance-body');
-  tbody.innerHTML = paginated.length ? paginated.map(a => { const w = workers.find(w => w.id == a.workerId) || {name: 'Deleted'}; const s = sites.find(s => s.id == a.siteId) || {name: 'Deleted'}; const half = a.dayType === 'half' ? '<span class="badge badge-info badge-sm" style="margin-left:5px;">Half</span>' : ''; return `<tr><td>${new Date(a.date).toLocaleDateString()}</td><td><strong>${w.name}</strong> ${half}</td><td>${s.name}</td><td><span class="secure-amount" onclick="revealAmount()">₹${a.wages.toLocaleString()}</span></td><td><span class="badge ${a.payment === 'paid' ? 'badge-success' : 'badge-warning'}" onclick="togglePayment(${a.id})">${a.payment.toUpperCase()}</span></td><td><button class="btn btn-ghost btn-sm" onclick="editEntry(${a.id})">Edit</button> <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteEntry(${a.id})">Delete</button></td></tr>`; }).join('') : '<tr><td colspan="6" class="empty-state">No records found.</td></tr>';
-  const pg = document.getElementById('attendance-pagination');
-  if(filtered.length > attendanceRowsPerPage) { pg.style.display = 'flex'; pg.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="changeAttendancePage(-1)" ${attendanceCurrentPage === 1 ? 'disabled' : ''}>⬅️ Previous</button><span style="font-size: 14px; font-weight:600;">Page ${attendanceCurrentPage} of ${totalPages}</span><button class="btn btn-ghost btn-sm" onclick="changeAttendancePage(1)" ${attendanceCurrentPage === totalPages ? 'disabled' : ''}>Next ➡️</button>`; } else { pg.style.display = 'none'; }
+  document.getElementById('attendance-body').innerHTML = paginated.map(a => `<tr><td>${a.date}</td><td><strong>${workers.find(w=>w.id==a.workerId)?.name}</strong></td><td>${sites.find(s=>s.id==a.siteId)?.name}</td><td><span class="secure-amount" onclick="revealAmount()">₹${a.wages}</span></td><td><span class="badge badge-secondary">${a.mode || 'Cash'}</span></td><td><span class="badge ${a.payment === 'paid' ? 'badge-success' : 'badge-warning'}" onclick="togglePayment(${a.id})">${a.payment.toUpperCase()}</span></td><td><button class="btn btn-ghost btn-sm" onclick="editEntry(${a.id})">Edit</button></td></tr>`).join('');
 }
-window.changeAttendancePage = (d) => { attendanceCurrentPage += d; renderAttendance(); };
 
 function renderSitePayments() {
-  const sorted = [...sitePayments].sort((a,b) => new Date(b.date) - new Date(a.date));
-  document.getElementById('payments-body').innerHTML = sorted.length ? sorted.map(p => { const s = sites.find(s => s.id == p.siteId) || {name: 'Deleted'}; return `<tr><td>${new Date(p.date).toLocaleDateString()}</td><td><strong>${s.name}</strong></td><td style="color:var(--success); font-weight:bold;"><span class="secure-amount" onclick="revealAmount()">₹${p.amount.toLocaleString()}</span></td><td>${p.notes || '-'}</td><td><button class="btn btn-ghost btn-sm" onclick="editPayment(${p.id})">Edit</button> <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deletePayment(${p.id})">Delete</button></td></tr>`; }).join('') : '<tr><td colspan="5" class="empty-state">No site payments.</td></tr>';
+  document.getElementById('payments-body').innerHTML = sitePayments.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => `<tr><td>${p.date}</td><td><strong>${sites.find(s=>s.id==p.siteId)?.name}</strong></td><td style="color:var(--success);"><span class="secure-amount" onclick="revealAmount()">₹${p.amount}</span></td><td><span class="badge badge-info">${p.mode || 'Cash'}</span></td><td>${p.notes || '-'}</td><td><button class="btn btn-ghost btn-sm" onclick="editPayment(${p.id})">Edit</button></td></tr>`).join('');
 }
 
 function renderPayouts() {
-  const cutoff = document.getElementById('settlement-date').value, wId = document.getElementById('payout-search-worker').value, sId = document.getElementById('payout-search-site').value, from = document.getElementById('payout-date-from').value, to = document.getElementById('payout-date-to').value;
-  const pending = attendance.filter(a => a.payment === 'pending' && (!cutoff || a.date <= cutoff) && (!from || a.date >= from) && (!to || a.date <= to) && (!wId || a.workerId == wId) && (!sId || a.siteId == sId));
-  const totals = {}; pending.forEach(a => { if(!totals[a.workerId]) totals[a.workerId] = { days: 0, due: 0 }; totals[a.workerId].days += (a.dayType === 'half' ? 0.5 : 1); totals[a.workerId].due += a.wages; });
-  const tbody = document.getElementById('payouts-body');
-  tbody.innerHTML = Object.keys(totals).length ? Object.keys(totals).map(id => { const w = workers.find(x => x.id == id) || {name: 'Unknown'}; return `<tr><td><strong class="text-link" onclick="viewPayoutDetails(${id})">${w.name}</strong></td><td>${totals[id].days} days</td><td style="color:var(--warning); font-weight:700;"><span class="secure-amount" onclick="revealAmount()">₹${totals[id].due.toLocaleString()}</span></td><td><button class="btn btn-success btn-sm" onclick="settleWorkerWages(${id}, '${w.name}', '${cutoff}')">✔️ Mark as Paid</button></td></tr>`; }).join('') : '<tr><td colspan="4" class="empty-state">No pending wages.</td></tr>';
+  const cutoff = document.getElementById('settlement-date').value;
+  const pending = attendance.filter(a => a.payment === 'pending' && (!cutoff || a.date <= cutoff));
+  const totals = {}; pending.forEach(a => { totals[a.workerId] = (totals[a.workerId] || 0) + a.wages; });
+  document.getElementById('payouts-body').innerHTML = Object.keys(totals).map(id => { const w = workers.find(x => x.id == id); return `<tr><td><strong class="text-link" onclick="viewPayoutDetails(${id})">${w?.name}</strong></td><td>-</td><td style="color:var(--warning);"><span class="secure-amount" onclick="revealAmount()">₹${totals[id]}</span></td><td><button class="btn btn-success btn-sm" onclick="settleWorkerWages(${id}, '${w?.name}', ${totals[id]})">✔️ Mark Paid</button></td></tr>`; }).join('');
 }
 
-function renderDetailsTable(records, tbody) {
-  if (!records.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No records.</td></tr>'; return; }
-  const groups = {}; records.forEach(a => { const site = sites.find(s => s.id == a.siteId) || { payCycle: 'sat-fri' }; const weekEnd = getWeekEndDate(a.date, site.payCycle || 'sat-fri'); if (!groups[weekEnd]) groups[weekEnd] = []; groups[weekEnd].push(a); });
-  let html = '', grandTotal = 0;
-  Object.keys(groups).sort().forEach(we => {
-    let weekTotal = 0; groups[we].sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(a => { weekTotal += a.wages; grandTotal += a.wages; const site = sites.find(x => x.id == a.siteId) || {name: '-'}; const dayName = new Date(a.date).toLocaleDateString('en-US', { weekday: 'short' }); const half = a.dayType === 'half' ? '<span class="badge badge-info badge-sm">Half</span>' : ''; const status = a.payment === 'paid' ? '<small style="color:var(--success)">(Paid)</small>' : ''; html += `<tr><td><strong>${a.date}</strong></td><td>${dayName} ${half}</td><td>${site.name} ${status}</td><td><span class="secure-amount" onclick="revealAmount()">₹${a.wages}</span></td></tr>`; });
-    html += `<tr style="background: rgba(255,255,255,0.03);"><td colspan="3" style="text-align:right; font-size:12px; font-weight:600;">WEEK TOTAL (Ending ${new Date(we).toLocaleDateString()}):</td><td style="color:var(--info); font-weight:bold;"><span class="secure-amount" onclick="revealAmount()">₹${weekTotal.toLocaleString()}</span></td></tr>`;
-  });
-  tbody.innerHTML = html + `<tr style="background: var(--bg);"><td colspan="3" style="text-align:right; font-weight:bold;">GRAND TOTAL:</td><td style="color:var(--warning); font-weight:bold;"><span class="secure-amount" onclick="revealAmount()">₹${grandTotal.toLocaleString()}</span></td></tr>`;
-}
-
-function viewPayoutDetails(wId) { const cutoff = document.getElementById('settlement-date').value, siteId = document.getElementById('payout-search-site').value, from = document.getElementById('payout-date-from').value, to = document.getElementById('payout-date-to').value; const pending = attendance.filter(a => a.workerId == wId && a.payment === 'pending' && (!cutoff || a.date <= cutoff) && (!from || a.date >= from) && (!to || a.date <= to) && (!siteId || a.siteId == siteId)); const w = workers.find(x => x.id == wId); document.getElementById('payout-details-title').textContent = `${w.name} - Unpaid`; renderDetailsTable(pending, document.getElementById('payout-details-body')); openModal('payout-details-modal'); }
-function viewDashboardWorkerDetails(wId) { const from = document.getElementById('dashboard-date-from').value, to = document.getElementById('dashboard-date-to').value, siteId = document.getElementById('dashboard-site').value; const filtered = attendance.filter(a => a.workerId == wId && (!from || a.date >= from) && (!to || a.date <= to) && (!siteId || a.siteId == siteId)); const w = workers.find(x => x.id == wId); document.getElementById('payout-details-title').textContent = `${w.name} - History`; renderDetailsTable(filtered, document.getElementById('payout-details-body')); openModal('payout-details-modal'); }
+function viewPayoutDetails(wId) { const cutoff = document.getElementById('settlement-date').value; const pending = attendance.filter(a => a.workerId == wId && a.payment === 'pending' && (!cutoff || a.date <= cutoff)); const tbody = document.getElementById('payout-details-body'); tbody.innerHTML = pending.map(a => `<tr><td>${a.date}</td><td>-</td><td>${sites.find(s=>s.id==a.siteId)?.name}</td><td>₹${a.wages}</td><td>${a.mode || 'Cash'}</td></tr>`).join(''); openModal('payout-details-modal'); }
 
 function renderQuickEntryList() {
-  const list = document.getElementById('tab-qe-workers-list'); if(!workers.length) { list.innerHTML = '<div class="empty-state">Add workers first.</div>'; return; }
-  if(!document.getElementById('tab-qe-date').value) document.getElementById('tab-qe-date').value = new Date().toISOString().split('T')[0];
-  if(lastSelectedSite) document.getElementById('tab-qe-site').value = lastSelectedSite;
-  list.innerHTML = workers.map(w => `<div class="qe-item"><input type="checkbox" class="qe-checkbox" id="tab-qe-check-${w.id}" value="${w.id}"><label for="tab-qe-check-${w.id}">${w.name} <small>(${w.category})</small></label><div style="display:flex; gap:8px; align-items:center;"><select id="tab-qe-daytype-${w.id}" class="select btn-sm" onchange="updateQEWage(${w.id}, ${w.rate})"><option value="full">Full Day</option><option value="half">Half Day</option></select><span>₹</span><input type="number" id="tab-qe-wage-${w.id}" value="${w.rate}" class="input btn-sm" style="width:80px"><select id="tab-qe-status-${w.id}" class="select btn-sm"><option value="pending">Pending</option><option value="paid">Paid</option></select></div></div>`).join('');
+  document.getElementById('tab-qe-workers-list').innerHTML = workers.map(w => `<div class="qe-item"><input type="checkbox" class="qe-checkbox" id="tab-qe-check-${w.id}" value="${w.id}"><label for="tab-qe-check-${w.id}">${w.name}</label><div style="display:flex; gap:8px; align-items:center;"><span>₹</span><input type="number" id="tab-qe-wage-${w.id}" value="${w.rate}" class="input btn-sm" style="width:80px"></div></div>`).join('');
 }
-window.updateQEWage = (id, rate) => { const type = document.getElementById(`tab-qe-daytype-${id}`).value; document.getElementById(`tab-qe-wage-${id}`).value = type === 'half' ? (rate/2) : rate; };
 
 // --- Actions ---
-function settleWorkerWages(wId, wName, cutoff) { const siteId = document.getElementById('payout-search-site').value, from = document.getElementById('payout-date-from').value, to = document.getElementById('payout-date-to').value; if(confirm(`Mark as PAID for ${wName}?`)) { attendance = attendance.map(a => { if(a.workerId == wId && a.payment === 'pending' && (!cutoff || a.date <= cutoff) && (!from || a.date >= from) && (!to || a.date <= to) && (!siteId || a.siteId == siteId)) a.payment = 'paid'; return a; }); saveData(); showToast("Wages settled."); } }
-function togglePayment(id) { attendance = attendance.map(a => { if(a.id == id) a.payment = a.payment === 'paid' ? 'pending' : 'paid'; return a; }); saveData(); showToast("Payment updated."); }
-function deleteWorker(id){ if(confirm('Delete worker?')){ workers = workers.filter(w=>w.id!=id); saveData(); } }
-function deleteSite(id){ if(confirm('Delete site?')){ sites = sites.filter(s=>s.id!=id); saveData(); } }
-function deleteEntry(id){ if(confirm('Delete record?')){ attendance = attendance.filter(a=>a.id!=id); saveData(); } }
-function deletePayment(id){ if(confirm('Delete payment?')){ sitePayments = sitePayments.filter(p=>p.id!=id); saveData(); } }
+let activeSettleId = null;
+function settleWorkerWages(id, name, amount) {
+    activeSettleId = id;
+    document.getElementById('settle-info').textContent = `Settle ₹${amount} for ${name}`;
+    openModal('settle-modal');
+}
+
+document.getElementById('confirm-settle-btn').onclick = () => {
+    const mode = document.getElementById('settle-mode').value;
+    const cutoff = document.getElementById('settlement-date').value;
+    attendance = attendance.map(a => { if(a.workerId == activeSettleId && a.payment === 'pending' && (!cutoff || a.date <= cutoff)) { a.payment = 'paid'; a.mode = mode; } return a; });
+    saveData(); closeModal('settle-modal'); showToast("Wages Settled!");
+};
+
+function togglePayment(id) { attendance = attendance.map(a => { if(a.id == id) a.payment = a.payment === 'paid' ? 'pending' : 'paid'; return a; }); saveData(); }
 
 document.getElementById('add-worker-btn').onclick = () => { editWorkerId = null; document.getElementById('worker-form').reset(); openModal('worker-modal', 'Add Worker'); };
-document.getElementById('add-site-btn').onclick = () => { editSiteId = null; document.getElementById('site-form').reset(); document.getElementById('site-cycle').value = cycleSelect.value; openModal('site-modal', 'Add Site'); };
+document.getElementById('add-site-btn').onclick = () => { editSiteId = null; document.getElementById('site-form').reset(); openModal('site-modal', 'Add Site'); };
 document.getElementById('add-payment-btn').onclick = () => { editPaymentId = null; document.getElementById('payment-form').reset(); document.getElementById('payment-date').value = new Date().toISOString().split('T')[0]; openModal('payment-modal', 'Add Payment'); };
-document.getElementById('add-entry-btn').onclick = () => { editEntryId = null; document.getElementById('entry-form').reset(); document.getElementById('entry-date').value = new Date().toISOString().split('T')[0]; if(lastSelectedSite) document.getElementById('entry-site').value = lastSelectedSite; if(workers[0]) document.getElementById('entry-wages').value = workers[0].rate; openModal('entry-modal', 'Log Attendance'); };
-document.getElementById('entry-worker').onchange = (e) => { const w = workers.find(x => x.id == e.target.value); if(w) document.getElementById('entry-wages').value = document.getElementById('entry-daytype').value === 'half' ? (w.rate/2) : w.rate; };
-document.getElementById('entry-daytype').onchange = () => document.getElementById('entry-worker').dispatchEvent(new Event('change'));
-document.getElementById('qe-toggle-all').onclick = () => { const cbs = document.querySelectorAll('.qe-checkbox'); const all = Array.from(cbs).every(c => c.checked); cbs.forEach(c => c.checked = !all); };
+document.getElementById('add-entry-btn').onclick = () => { editEntryId = null; document.getElementById('entry-form').reset(); document.getElementById('entry-date').value = new Date().toISOString().split('T')[0]; openModal('entry-modal', 'Log Attendance'); };
 
 document.getElementById('worker-form').onsubmit = (e) => { e.preventDefault(); const d = { id: editWorkerId || Date.now(), name: document.getElementById('worker-name').value, category: document.getElementById('worker-category').value, phone: document.getElementById('worker-phone').value, rate: Number(document.getElementById('worker-rate').value) }; if(editWorkerId) workers = workers.map(w=>w.id==editWorkerId?d:w); else workers.push(d); closeModal('worker-modal'); saveData(); };
 document.getElementById('site-form').onsubmit = (e) => { e.preventDefault(); const d = { id: editSiteId || Date.now(), name: document.getElementById('site-name').value, location: document.getElementById('site-location').value, status: document.getElementById('site-status').value, payCycle: document.getElementById('site-cycle').value }; if(editSiteId) sites = sites.map(s=>s.id==editSiteId?d:s); else sites.push(d); closeModal('site-modal'); saveData(); };
-document.getElementById('payment-form').onsubmit = (e) => { e.preventDefault(); const d = { id: editPaymentId || Date.now(), date: document.getElementById('payment-date').value, siteId: Number(document.getElementById('payment-site').value), amount: Number(document.getElementById('payment-amount').value), notes: document.getElementById('payment-notes').value }; if(editPaymentId) sitePayments = sitePayments.map(p=>p.id==editPaymentId?d:p); else sitePayments.push(d); closeModal('payment-modal'); saveData(); };
-document.getElementById('entry-form').onsubmit = (e) => { e.preventDefault(); lastSelectedSite = Number(document.getElementById('entry-site').value); const d = { id: editEntryId || Date.now(), date: document.getElementById('entry-date').value, workerId: Number(document.getElementById('entry-worker').value), siteId: lastSelectedSite, wages: Number(document.getElementById('entry-wages').value), payment: document.getElementById('entry-payment').value, dayType: document.getElementById('entry-daytype').value }; if(editEntryId) attendance = attendance.map(a=>a.id==editEntryId?d:a); else attendance.push(d); closeModal('entry-modal'); saveData(); };
-document.getElementById('tab-quick-entry-form').onsubmit = (e) => { e.preventDefault(); const date = document.getElementById('tab-qe-date').value, siteId = document.getElementById('tab-qe-site').value; lastSelectedSite = Number(siteId); workers.forEach(w => { const cb = document.getElementById(`tab-qe-check-${w.id}`); if(cb && cb.checked) { attendance.push({ id: Date.now()+Math.random(), date, workerId: w.id, siteId: Number(siteId), wages: Number(document.getElementById(`tab-qe-wage-${w.id}`).value), payment: document.getElementById(`tab-qe-status-${w.id}`).value, dayType: document.getElementById(`tab-qe-daytype-${w.id}`).value }); cb.checked = false; } }); saveData(); showToast("Bulk Entry saved."); };
+document.getElementById('payment-form').onsubmit = (e) => { e.preventDefault(); const d = { id: editPaymentId || Date.now(), date: document.getElementById('payment-date').value, siteId: Number(document.getElementById('payment-site').value), amount: Number(document.getElementById('payment-amount').value), mode: document.getElementById('payment-mode').value, notes: document.getElementById('payment-notes').value }; if(editPaymentId) sitePayments = sitePayments.map(p=>p.id==editPaymentId?d:p); else sitePayments.push(d); closeModal('payment-modal'); saveData(); };
+document.getElementById('entry-form').onsubmit = (e) => { e.preventDefault(); const d = { id: editEntryId || Date.now(), date: document.getElementById('entry-date').value, workerId: Number(document.getElementById('entry-worker').value), siteId: Number(document.getElementById('entry-site').value), wages: Number(document.getElementById('entry-wages').value), payment: document.getElementById('entry-payment').value, mode: document.getElementById('entry-mode').value, dayType: document.getElementById('entry-daytype').value }; if(editEntryId) attendance = attendance.map(a=>a.id==editEntryId?d:a); else attendance.push(d); closeModal('entry-modal'); saveData(); };
+document.getElementById('tab-quick-entry-form').onsubmit = (e) => { e.preventDefault(); const date = document.getElementById('tab-qe-date').value, siteId = document.getElementById('tab-qe-site').value; workers.forEach(w => { const cb = document.getElementById(`tab-qe-check-${w.id}`); if(cb && cb.checked) { attendance.push({ id: Date.now()+Math.random(), date, workerId: w.id, siteId: Number(siteId), wages: Number(document.getElementById(`tab-qe-wage-${w.id}`).value), payment: 'pending', mode: 'Cash', dayType: 'full' }); cb.checked = false; } }); saveData(); showToast("Bulk Entry saved."); };
 
-function editWorker(id){ const w = workers.find(x => x.id == id); editWorkerId = id; document.getElementById('worker-name').value = w.name; document.getElementById('worker-category').value = w.category; document.getElementById('worker-phone').value = w.phone; document.getElementById('worker-rate').value = w.rate; openModal('worker-modal', 'Edit Worker'); }
-function editSite(id){ const s = sites.find(x => x.id == id); editSiteId = id; document.getElementById('site-name').value = s.name; document.getElementById('site-location').value = s.location; document.getElementById('site-status').value = s.status; document.getElementById('site-cycle').value = s.payCycle || 'sat-fri'; openModal('site-modal', 'Edit Site'); }
-function editPayment(id){ const p = sitePayments.find(x => x.id == id); editPaymentId = id; document.getElementById('payment-date').value = p.date; document.getElementById('payment-site').value = p.siteId; document.getElementById('payment-amount').value = p.amount; document.getElementById('payment-notes').value = p.notes; openModal('payment-modal', 'Edit Payment'); }
-function editEntry(id){ const a = attendance.find(x => x.id == id); editEntryId = id; document.getElementById('entry-date').value = a.date; document.getElementById('entry-worker').value = a.workerId; document.getElementById('entry-site').value = a.siteId; document.getElementById('entry-daytype').value = a.dayType; document.getElementById('entry-wages').value = a.wages; document.getElementById('entry-payment').value = a.payment; openModal('entry-modal', 'Edit Record'); }
+function editWorker(id){ const w = workers.find(x => x.id == id); editWorkerId = id; document.getElementById('worker-name').value = w.name; document.getElementById('worker-rate').value = w.rate; openModal('worker-modal', 'Edit Worker'); }
+function editSite(id){ const s = sites.find(x => x.id == id); editSiteId = id; document.getElementById('site-name').value = s.name; openModal('site-modal', 'Edit Site'); }
+function editPayment(id){ const p = sitePayments.find(x => x.id == id); editPaymentId = id; document.getElementById('payment-date').value = p.date; document.getElementById('payment-amount').value = p.amount; document.getElementById('payment-mode').value = p.mode || 'Cash'; openModal('payment-modal', 'Edit Payment'); }
+function editEntry(id){ const a = attendance.find(x => x.id == id); editEntryId = id; document.getElementById('entry-date').value = a.date; document.getElementById('entry-wages').value = a.wages; document.getElementById('entry-mode').value = a.mode || 'Cash'; openModal('entry-modal', 'Edit Record'); }
 
-['filter-date-from','filter-date-to','search-worker','search-site','filter-payment'].forEach(id => document.getElementById(id).addEventListener('change', () => { attendanceCurrentPage = 1; renderAttendance(); }));
+['filter-date-from','search-worker','filter-payment'].forEach(id => document.getElementById(id).onchange = renderAttendance);
 ['dashboard-date-from','dashboard-date-to','dashboard-site'].forEach(id => document.getElementById(id).onchange = renderDashboard);
-['settlement-date','payout-search-worker','payout-search-site','payout-date-from','payout-date-to'].forEach(id => document.getElementById(id).onchange = renderPayouts);
+document.getElementById('settlement-date').onchange = renderPayouts;
 document.querySelectorAll('.nav-item').forEach(i => i.onclick = () => switchTab(i.dataset.tab));
 
-function renderAll(){ renderWorkers(); renderSites(); renderSitePayments(); renderAttendance(); renderPayouts(); renderQuickEntryList(); renderDashboard(); }
+function renderAll(){ renderWorkers(); renderSites(); renderSitePayments(); renderAttendance(); renderPayouts(); renderQuickEntryList(); renderDashboard(); updatePrivacyUI(); }
 </script>
 </body>
 </html>
