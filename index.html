@@ -113,9 +113,8 @@ body {
 .qe-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); cursor: pointer; }
 .qe-item label { flex: 1; cursor: pointer; font-weight: 600; font-size: 15px; min-width: 150px; }
 
-/* Privacy Blur Feature */
-.secure-amount { filter: blur(6px); cursor: pointer; transition: filter 0.3s ease; user-select: none; border-radius: 4px; }
-body.privacy-unlocked .secure-amount { filter: none !important; -webkit-filter: none !important; opacity: 1 !important; text-shadow: none !important; cursor: default !important; }
+/* Privacy Blur Feature - Now physical DOM removal */
+.secure-amount { filter: blur(6px); cursor: pointer; transition: filter 0.3s ease; user-select: none; border-radius: 4px; display: inline-block; padding: 0 2px;}
 
 /* KEYPAD STYLES */
 .pin-display { display: flex; justify-content: center; gap: 16px; margin-bottom: 32px; height: 24px; align-items: center;}
@@ -611,20 +610,21 @@ let attendanceCurrentPage = 1, attendanceRowsPerPage = 15;
 const cycleSelect = document.getElementById('global-pay-cycle');
 
 // ==========================================
-// CUSTOM ON-SCREEN PIN KEYPAD LOGIC
+// CUSTOM ON-SCREEN PIN & BULLETPROOF UNBLUR
 // ==========================================
 let appPin = (localStorage.getItem('appPin') || '1234').trim();
 let currentPinInput = '', pinResolveCallback = null, isPrivacyUnlocked = false;
 
+// Completely bypasses browser CSS glitches by writing fresh HTML
+window.formatMoney = (amt) => isPrivacyUnlocked ? `₹${amt}` : `<span class="secure-amount" onclick="revealAmount()">₹${amt}</span>`;
+
 function updatePrivacyUI() {
     const btn = document.getElementById('privacy-toggle-btn');
     if (isPrivacyUnlocked) { 
-        document.body.classList.add('privacy-unlocked'); 
         btn.innerHTML = '🔒 Hide Data'; 
         btn.style.color = 'var(--danger)'; 
         btn.style.borderColor = 'var(--danger)'; 
     } else { 
-        document.body.classList.remove('privacy-unlocked'); 
         btn.innerHTML = '👁️ Show Data'; 
         btn.style.color = 'var(--text)'; 
         btn.style.borderColor = 'var(--border)'; 
@@ -672,19 +672,18 @@ window.togglePrivacy = async () => {
     if (isPrivacyUnlocked) { 
         isPrivacyUnlocked = false; 
         updatePrivacyUI(); 
+        renderAll(); 
         showToast("Locked.", "info"); 
     } else { 
         const ent = await requestPin("🔒 Enter PIN"); 
         if (ent === null) return;
         
+        // MASTER RESET: Type 0000 to force unlock and reset PIN to 1234
         if (ent === appPin || ent === '0000') { 
-            if (ent === '0000') {
-                appPin = '1234';
-                localStorage.setItem('appPin', appPin);
-                showToast("PIN Reset to 1234", "info");
-            }
+            if (ent === '0000') { appPin = '1234'; localStorage.setItem('appPin', appPin); showToast("PIN Reset to 1234", "info"); }
             isPrivacyUnlocked = true; 
             updatePrivacyUI(); 
+            renderAll(); 
             showToast("Unlocked.", "success"); 
         } else { 
             showToast("Incorrect PIN!", "error"); 
@@ -700,6 +699,7 @@ window.revealAmount = async () => {
         if(ent === '0000') { appPin = '1234'; localStorage.setItem('appPin', appPin); }
         isPrivacyUnlocked = true; 
         updatePrivacyUI(); 
+        renderAll();
         showToast("Unlocked.", "success"); 
     } else { 
         showToast("Incorrect PIN!", "error"); 
@@ -764,8 +764,8 @@ window.exportWeeklyPayouts = () => {
         (!cutoff || a.date <= cutoff) &&
         (!from || a.date >= from) &&
         (!to || a.date <= to) &&
-        (!wId || a.workerId == wId) &&
-        (!sId || a.siteId == sId)
+        (!wId || String(a.workerId) === String(wId)) &&
+        (!sId || String(a.siteId) === String(sId))
     );
     
     if(pending.length === 0) return showToast("No pending payouts for this filter!", "error");
@@ -796,7 +796,7 @@ function switchTab(tabId) { document.querySelectorAll('.nav-item').forEach(i => 
 
 function renderWorkers(){
   const tbody = document.getElementById('workers-body');
-  tbody.innerHTML = workers.length ? workers.map(w => `<tr><td><strong>${w.name}</strong></td><td>${w.category}</td><td>${w.phone || '-'}</td><td><span class="secure-amount" onclick="revealAmount()">₹${w.rate}</span></td><td><button type="button" class="btn btn-ghost btn-sm" onclick="editWorker(${w.id})">Edit</button> <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteWorker(${w.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="5" class="empty-state">No workers.</td></tr>';
+  tbody.innerHTML = workers.length ? workers.map(w => `<tr><td><strong>${w.name}</strong></td><td>${w.category}</td><td>${w.phone || '-'}</td><td>${formatMoney(w.rate)}</td><td><button type="button" class="btn btn-ghost btn-sm" onclick="editWorker(${w.id})">Edit</button> <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteWorker(${w.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="5" class="empty-state">No workers.</td></tr>';
   
   const opts = workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
   document.getElementById('search-worker').innerHTML = '<option value="">All Workers</option>' + opts; 
@@ -823,18 +823,17 @@ window.renderDashboard = () => {
       const to = document.getElementById('dashboard-date-to').value;
       const siteId = document.getElementById('dashboard-site').value;
       
-      const filteredAtt = attendance.filter(a => (!from || a.date >= from) && (!to || a.date <= to) && (!siteId || a.siteId == siteId));
-      const filteredPay = sitePayments.filter(p => (!from || p.date >= from) && (!to || p.date <= to) && (!siteId || p.siteId == siteId));
+      const filteredAtt = attendance.filter(a => (!from || a.date >= from) && (!to || a.date <= to) && (!siteId || String(a.siteId) === String(siteId)));
+      const filteredPay = sitePayments.filter(p => (!from || p.date >= from) && (!to || p.date <= to) && (!siteId || String(p.siteId) === String(siteId)));
       
-      document.getElementById('stat-pending').innerHTML = `<span class="secure-amount" onclick="revealAmount()">₹${filteredAtt.filter(a => a.payment === 'pending').reduce((t,a)=>t+(Number(a.wages)||0),0)}</span>`;
-      document.getElementById('stat-paid').innerHTML = `<span class="secure-amount" onclick="revealAmount()">₹${filteredAtt.filter(a => a.payment === 'paid').reduce((t,a)=>t+(Number(a.wages)||0),0)}</span>`;
-      document.getElementById('stat-revenue').innerHTML = `<span class="secure-amount" onclick="revealAmount()">₹${filteredPay.reduce((t,p)=>t+(Number(p.amount)||0),0)}</span>`;
+      document.getElementById('stat-pending').innerHTML = formatMoney(filteredAtt.filter(a => a.payment === 'pending').reduce((t,a)=>t+(Number(a.wages)||0),0));
+      document.getElementById('stat-paid').innerHTML = formatMoney(filteredAtt.filter(a => a.payment === 'paid').reduce((t,a)=>t+(Number(a.wages)||0),0));
+      document.getElementById('stat-revenue').innerHTML = formatMoney(filteredPay.reduce((t,p)=>t+(Number(p.amount)||0),0));
       
       document.getElementById('stat-sites').textContent = sites.filter(s => s.status === 'Active' || !s.status).length;
       
       const recent = [...filteredAtt].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
-      document.getElementById('activity-body').innerHTML = recent.length ? recent.map(a => `<tr><td>${a.date}</td><td>${workers.find(w=>w.id==a.workerId)?.name || '-'}</td><td>${sites.find(s=>s.id==a.siteId)?.name || '-'}</td><td><span class="secure-amount" onclick="revealAmount()">₹${a.wages}</span></td><td><span class="badge">${(a.payment||'').toUpperCase()}</span></td></tr>`).join('') : '<tr><td colspan="5" class="empty-state">No recent activity.</td></tr>';
-      updatePrivacyUI();
+      document.getElementById('activity-body').innerHTML = recent.length ? recent.map(a => `<tr><td>${a.date}</td><td>${workers.find(w=>w.id==a.workerId)?.name || '-'}</td><td>${sites.find(s=>s.id==a.siteId)?.name || '-'}</td><td>${formatMoney(a.wages)}</td><td><span class="badge">${(a.payment||'').toUpperCase()}</span></td></tr>`).join('') : '<tr><td colspan="5" class="empty-state">No recent activity.</td></tr>';
   } catch (e) { console.error(e); }
 }
 
@@ -846,16 +845,15 @@ window.renderAttendance = () => {
       const sId = document.getElementById('search-site').value;
       const status = document.getElementById('filter-payment').value;
       
-      const filtered = attendance.filter(a => (!from || a.date >= from) && (!to || a.date <= to) && (!wId || a.workerId == wId) && (!sId || a.siteId == sId) && (!status || a.payment == status)).sort((a,b) => new Date(b.date) - new Date(a.date));
+      const filtered = attendance.filter(a => (!from || a.date >= from) && (!to || a.date <= to) && (!wId || String(a.workerId) === String(wId)) && (!sId || String(a.siteId) === String(sId)) && (!status || a.payment == status)).sort((a,b) => new Date(b.date) - new Date(a.date));
       const totalPages = Math.ceil(filtered.length / attendanceRowsPerPage) || 1;
       if (attendanceCurrentPage > totalPages) attendanceCurrentPage = totalPages || 1;
       const paginated = filtered.slice((attendanceCurrentPage-1)*attendanceRowsPerPage, attendanceCurrentPage*attendanceRowsPerPage);
       
-      document.getElementById('attendance-body').innerHTML = paginated.length ? paginated.map(a => `<tr><td>${a.date}</td><td><strong>${workers.find(w=>w.id==a.workerId)?.name || '-'}</strong></td><td>${sites.find(s=>s.id==a.siteId)?.name || '-'}</td><td><span class="secure-amount" onclick="revealAmount()">₹${a.wages}</span></td><td><span class="badge badge-secondary">${a.mode || 'Cash'}</span></td><td><span class="badge ${a.payment === 'paid' ? 'badge-success' : 'badge-warning'}" onclick="togglePayment(${a.id})">${(a.payment||'').toUpperCase()}</span></td><td><button type="button" class="btn btn-ghost btn-sm" onclick="editEntry(${a.id})">Edit</button> <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteEntry(${a.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="7" class="empty-state">No records found.</td></tr>';
+      document.getElementById('attendance-body').innerHTML = paginated.length ? paginated.map(a => `<tr><td>${a.date}</td><td><strong>${workers.find(w=>w.id==a.workerId)?.name || '-'}</strong></td><td>${sites.find(s=>s.id==a.siteId)?.name || '-'}</td><td>${formatMoney(a.wages)}</td><td><span class="badge badge-secondary">${a.mode || 'Cash'}</span></td><td><span class="badge ${a.payment === 'paid' ? 'badge-success' : 'badge-warning'}" onclick="togglePayment(${a.id})">${(a.payment||'').toUpperCase()}</span></td><td><button type="button" class="btn btn-ghost btn-sm" onclick="editEntry(${a.id})">Edit</button> <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteEntry(${a.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="7" class="empty-state">No records found.</td></tr>';
       
       const pg = document.getElementById('attendance-pagination');
       if(filtered.length > attendanceRowsPerPage) { pg.style.display = 'flex'; pg.innerHTML = `<button type="button" class="btn btn-ghost btn-sm" onclick="changeAttendancePage(-1)" ${attendanceCurrentPage === 1 ? 'disabled' : ''}>⬅️ Previous</button><span style="font-size: 14px; font-weight:600;">Page ${attendanceCurrentPage} of ${totalPages}</span><button type="button" class="btn btn-ghost btn-sm" onclick="changeAttendancePage(1)" ${attendanceCurrentPage === totalPages ? 'disabled' : ''}>Next ➡️</button>`; } else { pg.style.display = 'none'; }
-      updatePrivacyUI();
   } catch(e) { console.error(e); }
 }
 window.changeAttendancePage = (d) => { attendanceCurrentPage += d; renderAttendance(); };
@@ -864,8 +862,7 @@ window.renderSitePayments = () => {
   try {
       const tbody = document.getElementById('payments-body');
       const sorted = [...sitePayments].sort((a,b) => new Date(b.date) - new Date(a.date));
-      tbody.innerHTML = sorted.length ? sorted.map(p => `<tr><td>${p.date}</td><td><strong>${sites.find(s=>s.id==p.siteId)?.name || '-'}</strong></td><td style="color:var(--success);"><span class="secure-amount" onclick="revealAmount()">₹${p.amount}</span></td><td><span class="badge badge-info">${p.mode || 'Cash'}</span></td><td>${p.notes || '-'}</td><td><button type="button" class="btn btn-ghost btn-sm" onclick="editPayment(${p.id})">Edit</button> <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deletePayment(${p.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="6" class="empty-state">No payments.</td></tr>';
-      updatePrivacyUI();
+      tbody.innerHTML = sorted.length ? sorted.map(p => `<tr><td>${p.date}</td><td><strong>${sites.find(s=>s.id==p.siteId)?.name || '-'}</strong></td><td style="color:var(--success);">${formatMoney(p.amount)}</td><td><span class="badge badge-info">${p.mode || 'Cash'}</span></td><td>${p.notes || '-'}</td><td><button type="button" class="btn btn-ghost btn-sm" onclick="editPayment(${p.id})">Edit</button> <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deletePayment(${p.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="6" class="empty-state">No payments.</td></tr>';
   } catch (e) { console.error(e); }
 }
 
@@ -882,8 +879,8 @@ window.renderPayouts = () => {
         (!cutoff || a.date <= cutoff) &&
         (!from || a.date >= from) &&
         (!to || a.date <= to) &&
-        (!wId || a.workerId == wId) &&
-        (!sId || a.siteId == sId)
+        (!wId || String(a.workerId) === String(wId)) &&
+        (!sId || String(a.siteId) === String(sId))
       );
 
       const totals = {}; 
@@ -904,11 +901,10 @@ window.renderPayouts = () => {
           return `<tr>
             <td><strong class="text-link" onclick="viewPayoutDetails(${id})">${w?.name || 'Unknown'}</strong></td>
             <td>${totals[id].days} days</td>
-            <td style="color:var(--warning);"><span class="secure-amount" onclick="revealAmount()">₹${totals[id].due}</span></td>
+            <td style="color:var(--warning);">${formatMoney(totals[id].due)}</td>
             <td><button type="button" class="btn btn-success btn-sm" onclick="settleWorkerWages(${id}, '${w?.name}', ${totals[id].due})">✔️ Mark Paid</button></td>
           </tr>`; 
       }).join('');
-      updatePrivacyUI();
   } catch (e) { console.error(e); }
 }
 
@@ -924,14 +920,14 @@ window.viewPayoutDetails = (wId) => {
       (!cutoff || a.date <= cutoff) &&
       (!from || a.date >= from) &&
       (!to || a.date <= to) &&
-      (!sId || a.siteId == sId)
+      (!sId || String(a.siteId) === String(sId))
   );
 
   const tbody = document.getElementById('payout-details-body'); 
   if(pending.length === 0){
       tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No records found.</td></tr>';
   } else {
-      tbody.innerHTML = pending.map(a => `<tr><td>${a.date}</td><td>${a.dayType === 'half' ? 'Half' : 'Full'}</td><td>${sites.find(s=>s.id==a.siteId)?.name || '-'}</td><td>₹${a.wages}</td><td>${a.mode || 'Cash'}</td></tr>`).join(''); 
+      tbody.innerHTML = pending.map(a => `<tr><td>${a.date}</td><td>${a.dayType === 'half' ? 'Half' : 'Full'}</td><td>${sites.find(s=>s.id==a.siteId)?.name || '-'}</td><td>${formatMoney(a.wages)}</td><td>${a.mode || 'Cash'}</td></tr>`).join(''); 
   }
   openModal('payout-details-modal'); 
 }
@@ -961,7 +957,7 @@ document.getElementById('confirm-settle-btn').onclick = () => {
            (!cutoff || a.date <= cutoff) &&
            (!from || a.date >= from) &&
            (!to || a.date <= to) &&
-           (!sId || a.siteId == sId)
+           (!sId || String(a.siteId) === String(sId))
         ) { 
             a.payment = 'paid'; 
             a.mode = mode; 
@@ -996,7 +992,19 @@ window.editEntry = (id) => { const a = attendance.find(x => x.id == id); editEnt
 
 document.querySelectorAll('.nav-item').forEach(i => i.onclick = () => switchTab(i.dataset.tab));
 
-function renderAll(){ renderWorkers(); renderSites(); renderSitePayments(); renderAttendance(); renderPayouts(); renderQuickEntryList(); renderDashboard(); }
+function renderAll(){ 
+    renderWorkers(); 
+    renderSites(); 
+    renderSitePayments(); 
+    renderAttendance(); 
+    renderPayouts(); 
+    renderQuickEntryList(); 
+    renderDashboard(); 
+}
+
+// Initial UI Setup
+updatePrivacyUI();
+
 </script>
 </body>
 </html>
