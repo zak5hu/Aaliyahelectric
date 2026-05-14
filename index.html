@@ -113,7 +113,7 @@ body {
 .qe-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); cursor: pointer; }
 .qe-item label { flex: 1; cursor: pointer; font-weight: 600; font-size: 15px; min-width: 150px; }
 
-/* Privacy Blur Feature - Now physical DOM removal */
+/* Privacy Blur Feature */
 .secure-amount { filter: blur(6px); cursor: pointer; transition: filter 0.3s ease; user-select: none; border-radius: 4px; display: inline-block; padding: 0 2px;}
 
 /* KEYPAD STYLES */
@@ -610,13 +610,18 @@ let attendanceCurrentPage = 1, attendanceRowsPerPage = 15;
 const cycleSelect = document.getElementById('global-pay-cycle');
 
 // ==========================================
-// CUSTOM ON-SCREEN PIN & BULLETPROOF UNBLUR
+// CRASH-PROOF PIN & UNBLUR MECHANICS
 // ==========================================
-let appPin = (localStorage.getItem('appPin') || '1234').trim();
+let appPin = '1234';
+try { appPin = (localStorage.getItem('appPin') || '1234').trim(); } 
+catch(e) { console.warn("Browser security blocked local storage. Defaulting PIN."); }
+
 let currentPinInput = '', pinResolveCallback = null, isPrivacyUnlocked = false;
 
-// Completely bypasses browser CSS glitches by writing fresh HTML
-window.formatMoney = (amt) => isPrivacyUnlocked ? `₹${amt}` : `<span class="secure-amount" onclick="revealAmount()">₹${amt}</span>`;
+// Completely bypasses browser CSS glitches by returning pure text when unlocked
+window.formatMoney = (amt) => {
+    return isPrivacyUnlocked ? `₹${amt}` : `<span class="secure-amount" onclick="revealAmount()">₹${amt}</span>`;
+};
 
 function updatePrivacyUI() {
     const btn = document.getElementById('privacy-toggle-btn');
@@ -672,18 +677,21 @@ window.togglePrivacy = async () => {
     if (isPrivacyUnlocked) { 
         isPrivacyUnlocked = false; 
         updatePrivacyUI(); 
-        renderAll(); 
+        renderAll(); // Forcibly redraw screen blurred
         showToast("Locked.", "info"); 
     } else { 
         const ent = await requestPin("🔒 Enter PIN"); 
         if (ent === null) return;
         
-        // MASTER RESET: Type 0000 to force unlock and reset PIN to 1234
         if (ent === appPin || ent === '0000') { 
-            if (ent === '0000') { appPin = '1234'; localStorage.setItem('appPin', appPin); showToast("PIN Reset to 1234", "info"); }
+            if (ent === '0000') { 
+                appPin = '1234'; 
+                try{ localStorage.setItem('appPin', appPin); } catch(e){} 
+                showToast("PIN Reset to 1234", "info"); 
+            }
             isPrivacyUnlocked = true; 
             updatePrivacyUI(); 
-            renderAll(); 
+            renderAll(); // Forcibly redraw screen unblurred
             showToast("Unlocked.", "success"); 
         } else { 
             showToast("Incorrect PIN!", "error"); 
@@ -696,10 +704,10 @@ window.revealAmount = async () => {
     const ent = await requestPin("🔒 Enter PIN"); 
     if (ent === null) return; 
     if (ent === appPin || ent === '0000') { 
-        if(ent === '0000') { appPin = '1234'; localStorage.setItem('appPin', appPin); }
+        if(ent === '0000') { appPin = '1234'; try{ localStorage.setItem('appPin', appPin); } catch(e){} }
         isPrivacyUnlocked = true; 
         updatePrivacyUI(); 
-        renderAll();
+        renderAll(); // Forcibly redraw screen unblurred
         showToast("Unlocked.", "success"); 
     } else { 
         showToast("Incorrect PIN!", "error"); 
@@ -714,7 +722,7 @@ window.changePin = async () => {
             const nxt = await requestPin("Enter NEW PIN:"); 
             if (nxt && nxt.length === 4) { 
                 appPin = nxt; 
-                localStorage.setItem('appPin', appPin); 
+                try { localStorage.setItem('appPin', appPin); } catch(e){} 
                 showToast("PIN Updated!", "success"); 
             } 
         }, 250); 
@@ -782,7 +790,7 @@ window.exportWeeklyPayouts = () => {
 };
 
 // ==========================================
-// 4. RENDERING & UI
+// 4. RENDERING & UI (Crash-Proofed)
 // ==========================================
 const mobileMenuBtn = document.getElementById('mobile-menu-btn'), sidebarEl = document.querySelector('.sidebar'), mobileOverlay = document.getElementById('mobile-overlay');
 mobileMenuBtn.onclick = () => { sidebarEl.classList.add('show'); mobileOverlay.style.display = 'block'; };
@@ -795,26 +803,30 @@ function showToast(m, type = 'success') { const c = document.getElementById('toa
 function switchTab(tabId) { document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tabId)); document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === tabId)); if(window.innerWidth <= 768) { sidebarEl.classList.remove('show'); mobileOverlay.style.display = 'none'; } }
 
 function renderWorkers(){
-  const tbody = document.getElementById('workers-body');
-  tbody.innerHTML = workers.length ? workers.map(w => `<tr><td><strong>${w.name}</strong></td><td>${w.category}</td><td>${w.phone || '-'}</td><td>${formatMoney(w.rate)}</td><td><button type="button" class="btn btn-ghost btn-sm" onclick="editWorker(${w.id})">Edit</button> <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteWorker(${w.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="5" class="empty-state">No workers.</td></tr>';
-  
-  const opts = workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
-  document.getElementById('search-worker').innerHTML = '<option value="">All Workers</option>' + opts; 
-  document.getElementById('entry-worker').innerHTML = opts;
-  document.getElementById('payout-search-worker').innerHTML = '<option value="">All Workers</option>' + opts;
+  try {
+      const tbody = document.getElementById('workers-body');
+      tbody.innerHTML = workers.length ? workers.map(w => `<tr><td><strong>${w.name}</strong></td><td>${w.category}</td><td>${w.phone || '-'}</td><td>${formatMoney(w.rate)}</td><td><button type="button" class="btn btn-ghost btn-sm" onclick="editWorker(${w.id})">Edit</button> <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteWorker(${w.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="5" class="empty-state">No workers.</td></tr>';
+      
+      const opts = workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+      document.getElementById('search-worker').innerHTML = '<option value="">All Workers</option>' + opts; 
+      document.getElementById('entry-worker').innerHTML = opts;
+      document.getElementById('payout-search-worker').innerHTML = '<option value="">All Workers</option>' + opts;
+  } catch(e) { console.error("Worker Render Error:", e); }
 }
 
 function renderSites(){
-  const tbody = document.getElementById('sites-body');
-  tbody.innerHTML = sites.length ? sites.map(s => `<tr><td><strong>${s.name}</strong></td><td>${s.location}</td><td>${s.payCycle}</td><td><span class="badge badge-success">${s.status || 'Active'}</span></td><td><button type="button" class="btn btn-ghost btn-sm" onclick="editSite(${s.id})">Edit</button> <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteSite(${s.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="5" class="empty-state">No sites.</td></tr>';
-  
-  const opts = sites.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-  document.getElementById('search-site').innerHTML = '<option value="">All Sites</option>' + opts; 
-  document.getElementById('entry-site').innerHTML = opts; 
-  document.getElementById('payment-site').innerHTML = opts; 
-  document.getElementById('tab-qe-site').innerHTML = opts; 
-  document.getElementById('dashboard-site').innerHTML = '<option value="">All Sites</option>' + opts;
-  document.getElementById('payout-search-site').innerHTML = '<option value="">All Sites</option>' + opts;
+  try {
+      const tbody = document.getElementById('sites-body');
+      tbody.innerHTML = sites.length ? sites.map(s => `<tr><td><strong>${s.name}</strong></td><td>${s.location}</td><td>${s.payCycle}</td><td><span class="badge badge-success">${s.status || 'Active'}</span></td><td><button type="button" class="btn btn-ghost btn-sm" onclick="editSite(${s.id})">Edit</button> <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteSite(${s.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="5" class="empty-state">No sites.</td></tr>';
+      
+      const opts = sites.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+      document.getElementById('search-site').innerHTML = '<option value="">All Sites</option>' + opts; 
+      document.getElementById('entry-site').innerHTML = opts; 
+      document.getElementById('payment-site').innerHTML = opts; 
+      document.getElementById('tab-qe-site').innerHTML = opts; 
+      document.getElementById('dashboard-site').innerHTML = '<option value="">All Sites</option>' + opts;
+      document.getElementById('payout-search-site').innerHTML = '<option value="">All Sites</option>' + opts;
+  } catch(e) { console.error("Site Render Error:", e); }
 }
 
 window.renderDashboard = () => {
@@ -834,7 +846,7 @@ window.renderDashboard = () => {
       
       const recent = [...filteredAtt].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
       document.getElementById('activity-body').innerHTML = recent.length ? recent.map(a => `<tr><td>${a.date}</td><td>${workers.find(w=>w.id==a.workerId)?.name || '-'}</td><td>${sites.find(s=>s.id==a.siteId)?.name || '-'}</td><td>${formatMoney(a.wages)}</td><td><span class="badge">${(a.payment||'').toUpperCase()}</span></td></tr>`).join('') : '<tr><td colspan="5" class="empty-state">No recent activity.</td></tr>';
-  } catch (e) { console.error(e); }
+  } catch (e) { console.error("Dashboard Render Error:", e); }
 }
 
 window.renderAttendance = () => {
@@ -854,7 +866,7 @@ window.renderAttendance = () => {
       
       const pg = document.getElementById('attendance-pagination');
       if(filtered.length > attendanceRowsPerPage) { pg.style.display = 'flex'; pg.innerHTML = `<button type="button" class="btn btn-ghost btn-sm" onclick="changeAttendancePage(-1)" ${attendanceCurrentPage === 1 ? 'disabled' : ''}>⬅️ Previous</button><span style="font-size: 14px; font-weight:600;">Page ${attendanceCurrentPage} of ${totalPages}</span><button type="button" class="btn btn-ghost btn-sm" onclick="changeAttendancePage(1)" ${attendanceCurrentPage === totalPages ? 'disabled' : ''}>Next ➡️</button>`; } else { pg.style.display = 'none'; }
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error("Attendance Render Error:", e); }
 }
 window.changeAttendancePage = (d) => { attendanceCurrentPage += d; renderAttendance(); };
 
@@ -863,7 +875,7 @@ window.renderSitePayments = () => {
       const tbody = document.getElementById('payments-body');
       const sorted = [...sitePayments].sort((a,b) => new Date(b.date) - new Date(a.date));
       tbody.innerHTML = sorted.length ? sorted.map(p => `<tr><td>${p.date}</td><td><strong>${sites.find(s=>s.id==p.siteId)?.name || '-'}</strong></td><td style="color:var(--success);">${formatMoney(p.amount)}</td><td><span class="badge badge-info">${p.mode || 'Cash'}</span></td><td>${p.notes || '-'}</td><td><button type="button" class="btn btn-ghost btn-sm" onclick="editPayment(${p.id})">Edit</button> <button type="button" class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deletePayment(${p.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="6" class="empty-state">No payments.</td></tr>';
-  } catch (e) { console.error(e); }
+  } catch (e) { console.error("Payment Render Error:", e); }
 }
 
 window.renderPayouts = () => {
@@ -905,7 +917,7 @@ window.renderPayouts = () => {
             <td><button type="button" class="btn btn-success btn-sm" onclick="settleWorkerWages(${id}, '${w?.name}', ${totals[id].due})">✔️ Mark Paid</button></td>
           </tr>`; 
       }).join('');
-  } catch (e) { console.error(e); }
+  } catch (e) { console.error("Payout Render Error:", e); }
 }
 
 window.viewPayoutDetails = (wId) => { 
